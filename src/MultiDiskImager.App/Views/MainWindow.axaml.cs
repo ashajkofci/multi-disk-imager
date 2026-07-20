@@ -150,7 +150,7 @@ internal sealed partial class MainWindow : Window
                 Services.NotificationService.Notify();
             }
             var details = string.Join(Environment.NewLine, result.Devices.Select(device =>
-                $"{device.DeviceId}: {(device.Success ? "Success" : device.Error ?? "Failed")}" +
+                $"{device.DeviceId}: {(device.Success ? Localizer.Get("Success") : device.Error ?? Localizer.Get("Failed"))}" +
                 (device.FirstMismatchOffset is { } offset ? $" (first mismatch at byte {offset:N0})" : string.Empty)));
             await new MessageDialog(result.Success ? Localizer.Get("OperationComplete") : Localizer.Get("OperationResults"), details, Localizer.Get("Close"), cancelVisible: false).ShowDialog<bool>(this);
             if (result.Success && ViewModel.Settings.AutoCloseOnSuccess)
