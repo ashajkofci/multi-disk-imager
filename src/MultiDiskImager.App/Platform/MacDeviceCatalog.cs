@@ -8,8 +8,19 @@ namespace MultiDiskImager.Platform;
 [SupportedOSPlatform("macos")]
 internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
 {
-    private static readonly TimeSpan DiskUtilTimeout = TimeSpan.FromSeconds(15);
+    private readonly ProcessRunnerDelegate _runProcess;
+    private readonly TimeSpan _diskUtilTimeout;
     private IReadOnlySet<string>? _systemDiskIds;
+
+    public MacDeviceCatalog() : this(ProcessRunner.RunAsync, TimeSpan.FromSeconds(15))
+    {
+    }
+
+    internal MacDeviceCatalog(ProcessRunnerDelegate runProcess, TimeSpan? diskUtilTimeout = null)
+    {
+        _runProcess = runProcess;
+        _diskUtilTimeout = diskUtilTimeout ?? TimeSpan.FromSeconds(15);
+    }
 
     public async Task<IReadOnlyList<DeviceDescriptor>> GetDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -185,10 +196,10 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
         CancellationToken cancellationToken)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(DiskUtilTimeout);
+        timeout.CancelAfter(_diskUtilTimeout);
         try
         {
-            return await ProcessRunner.RunAsync("/usr/sbin/diskutil", arguments, timeout.Token).ConfigureAwait(false);
+            return await _runProcess("/usr/sbin/diskutil", arguments, timeout.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

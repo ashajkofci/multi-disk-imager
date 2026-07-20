@@ -17,5 +17,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\MultiDiskImager.App\Infrastructure\ProcessRunner.cs" Link="AppSource\ProcessRunner.cs" />
+    <Compile Include="..\..\src\MultiDiskImager.App\Platform\MacDeviceCatalog.cs" Link="AppSource\MacDeviceCatalog.cs" />
+    <Compile Include="..\..\src\MultiDiskImager.App\Platform\MacPlist.cs" Link="AppSource\MacPlist.cs" />
+  </ItemGroup>
 </Project>
-

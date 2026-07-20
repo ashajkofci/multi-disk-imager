@@ -13,6 +13,11 @@ internal sealed record ProcessResult(int ExitCode, string StandardOutput, string
     }
 }
 
+internal delegate Task<ProcessResult> ProcessRunnerDelegate(
+    string fileName,
+    IEnumerable<string> arguments,
+    CancellationToken cancellationToken = default);
+
 internal static class ProcessRunner
 {
     public static async Task<ProcessResult> RunAsync(
@@ -46,7 +51,19 @@ internal static class ProcessRunner
         var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
         try
         {
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            if (OperatingSystem.IsMacOS())
+            {
+                // Process.Exited/WaitForExitAsync can fail to signal for a
+                // child created by the administrator AppleScript shell even
+                // though diskutil has completed. Polling HasExited also reaps
+                // the child and lets the helper continue immediately.
+                await WaitForExitByPollingAsync(process, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             return new ProcessResult(process.ExitCode, await outputTask.ConfigureAwait(false), await errorTask.ConfigureAwait(false));
         }
         catch (OperationCanceledException)
@@ -66,6 +83,14 @@ internal static class ProcessRunner
             }
 
             throw;
+        }
+    }
+
+    internal static async Task WaitForExitByPollingAsync(Process process, CancellationToken cancellationToken)
+    {
+        while (!process.HasExited)
+        {
+            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
     }
 }
