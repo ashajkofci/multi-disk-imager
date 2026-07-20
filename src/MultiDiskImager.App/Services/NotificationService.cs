@@ -23,6 +23,15 @@ internal static class NotificationService
                     ArgumentList = { "-e", "beep 1" }
                 })?.Dispose();
             }
+            else if (OperatingSystem.IsLinux() && File.Exists("/usr/bin/canberra-gtk-play"))
+            {
+                Process.Start(new ProcessStartInfo("/usr/bin/canberra-gtk-play")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    ArgumentList = { "--id=complete" }
+                })?.Dispose();
+            }
         }
         catch (Exception)
         {

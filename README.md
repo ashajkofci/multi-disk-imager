@@ -27,8 +27,12 @@ SemVer releases publish unsigned, self-contained builds for:
 - Windows 10+ x64: one `.exe` with its runtime and native dependencies embedded.
 - macOS 12+ Intel: a zipped `.app`.
 - macOS 12+ Apple Silicon: a zipped `.app`.
+- Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
+- Ubuntu 22.04+ ARM64: a self-contained executable in a `.tar.gz` archive.
 
 Because the builds are intentionally unsigned, Windows SmartScreen or macOS Gatekeeper may warn on first launch. On macOS, use **Open** from Finder's context menu if Gatekeeper blocks the app. Administrator approval is requested only when raw-device access begins.
+
+On Ubuntu, extract the archive and run `./MultiDiskImager`. The executable contains the .NET runtime and application dependencies. Raw-device operations use the desktop's PolicyKit prompt through `pkexec`; the `policykit-1` and standard `util-linux` tools must be installed.
 
 ## Command line
 
@@ -43,6 +47,7 @@ MultiDiskImager [image.img] [options]
                                 Stop at the last allocated partition
   -s, -start, --start           Start after validation
       --version                 Print the version
+      --list-devices            List detected physical devices and exit
   -h, --help                    Show help
 ```
 

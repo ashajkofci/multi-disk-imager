@@ -12,11 +12,10 @@ internal interface IRawDeviceAccess
 internal sealed class UnsupportedRawDeviceAccess : IRawDeviceAccess
 {
     public Task PrepareAsync(DeviceDescriptor device, bool writing, CancellationToken cancellationToken) =>
-        throw new PlatformNotSupportedException("Raw disk access is supported on Windows and macOS only.");
+        throw new PlatformNotSupportedException("Raw disk access is supported on Windows, macOS, and Linux only.");
 
     public Stream Open(DeviceDescriptor device, FileAccess access) =>
-        throw new PlatformNotSupportedException("Raw disk access is supported on Windows and macOS only.");
+        throw new PlatformNotSupportedException("Raw disk access is supported on Windows, macOS, and Linux only.");
 
     public Task RestoreAsync(DeviceDescriptor device, CancellationToken cancellationToken) => Task.CompletedTask;
 }
-

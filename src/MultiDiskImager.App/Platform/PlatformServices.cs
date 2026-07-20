@@ -16,6 +16,11 @@ internal static class PlatformServices
             return new MacDeviceCatalog();
         }
 
+        if (OperatingSystem.IsLinux())
+        {
+            return new LinuxDeviceCatalog();
+        }
+
         return new UnsupportedDeviceCatalog();
     }
 
@@ -31,6 +36,11 @@ internal static class PlatformServices
             return new MacRawDeviceAccess();
         }
 
+        if (OperatingSystem.IsLinux())
+        {
+            return new LinuxRawDeviceAccess();
+        }
+
         return new UnsupportedRawDeviceAccess();
     }
 }
@@ -43,4 +53,3 @@ internal sealed class UnsupportedDeviceCatalog : IBlockDeviceCatalog
     public Task<DeviceDescriptor?> GetDeviceAsync(string id, CancellationToken cancellationToken = default) =>
         Task.FromResult<DeviceDescriptor?>(null);
 }
-

@@ -34,4 +34,12 @@ public sealed class ChecksumAndCommandLineTests
         var exception = Assert.Throws<ArgumentException>(() => CommandLineOptions.Parse([argument, "on"]));
         Assert.Contains("raw, unencrypted", exception.Message);
     }
+
+    [Fact]
+    public void ParsesDeviceListing()
+    {
+        var options = CommandLineOptions.Parse(["--list-devices"]);
+
+        Assert.True(options.ListDevices);
+    }
 }

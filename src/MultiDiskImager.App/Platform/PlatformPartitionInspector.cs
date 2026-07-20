@@ -1,5 +1,6 @@
 using System.Management;
 using System.Runtime.Versioning;
+using System.Text.Json;
 using MultiDiskImager.Core;
 using MultiDiskImager.Infrastructure;
 
@@ -17,6 +18,11 @@ internal static class PlatformPartitionInspector
         if (OperatingSystem.IsMacOS())
         {
             return InspectMacAsync(device, cancellationToken);
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            return InspectLinuxAsync(device, cancellationToken);
         }
 
         return Task.FromResult(new PartitionLayout(PartitionScheme.Raw, device.Size, device.LogicalSectorSize, []));
@@ -65,5 +71,49 @@ internal static class PlatformPartitionInspector
             : partitions.Length > 0 ? PartitionScheme.Mbr : PartitionScheme.Raw;
         return new PartitionLayout(scheme, device.Size, device.LogicalSectorSize, partitions);
     }
-}
 
+    [SupportedOSPlatform("linux")]
+    private static async Task<PartitionLayout> InspectLinuxAsync(DeviceDescriptor device, CancellationToken cancellationToken)
+    {
+        var result = await ProcessRunner.RunAsync(
+            "/usr/bin/lsblk",
+            ["--json", "--bytes", "--paths", "--output", "PATH,TYPE,SIZE,PARTTYPE,PARTLABEL,PTTYPE", device.Path],
+            cancellationToken).ConfigureAwait(false);
+        result.EnsureSuccess($"Inspecting {device.Id}");
+        using var document = JsonDocument.Parse(result.StandardOutput);
+        if (!document.RootElement.TryGetProperty("blockdevices", out var roots) || roots.GetArrayLength() == 0)
+        {
+            return new PartitionLayout(PartitionScheme.Raw, device.Size, device.LogicalSectorSize, []);
+        }
+
+        var root = roots[0];
+        var partitions = LinuxDeviceCatalog.DescendantsAndSelf(root)
+            .Where(node => LinuxDeviceCatalog.String(node, "type").Equals("part", StringComparison.OrdinalIgnoreCase))
+            .Select((partition, index) => new PartitionDescriptor(
+                index + 1,
+                ReadLinuxPartitionStart(partition),
+                LinuxDeviceCatalog.Integer(partition, "size"),
+                LinuxDeviceCatalog.String(partition, "parttype") is { Length: > 0 } type ? type : "Unknown",
+                LinuxDeviceCatalog.String(partition, "partlabel") is { Length: > 0 } label ? label : null))
+            .ToArray();
+        var tableType = LinuxDeviceCatalog.String(root, "pttype");
+        var scheme = tableType.Equals("gpt", StringComparison.OrdinalIgnoreCase)
+            ? PartitionScheme.Gpt
+            : partitions.Length > 0 ? PartitionScheme.Mbr : PartitionScheme.Raw;
+        return new PartitionLayout(scheme, device.Size, device.LogicalSectorSize, partitions);
+    }
+
+    [SupportedOSPlatform("linux")]
+    private static long ReadLinuxPartitionStart(JsonElement partition)
+    {
+        var name = Path.GetFileName(LinuxDeviceCatalog.String(partition, "path"));
+        var startPath = Path.Combine("/sys/class/block", name, "start");
+        return File.Exists(startPath) && long.TryParse(
+            File.ReadAllText(startPath).Trim(),
+            System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var sectors)
+            ? checked(sectors * 512)
+            : 0;
+    }
+}

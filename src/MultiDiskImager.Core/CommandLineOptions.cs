@@ -10,6 +10,7 @@ public sealed record CommandLineOptions(
     bool AutoStart,
     bool ShowHelp,
     bool ShowVersion,
+    bool ListDevices,
     bool PrivilegedHelper,
     string? PipeName)
 {
@@ -25,6 +26,7 @@ public sealed record CommandLineOptions(
         var start = false;
         var help = false;
         var version = false;
+        var listDevices = false;
         var helper = false;
 
         for (var index = 0; index < args.Count; index++)
@@ -80,6 +82,9 @@ public sealed record CommandLineOptions(
                 case "--version":
                     version = true;
                     break;
+                case "--list-devices":
+                    listDevices = true;
+                    break;
                 case "--privileged-helper":
                     helper = true;
                     break;
@@ -112,7 +117,7 @@ public sealed record CommandLineOptions(
             throw new ArgumentException("Read and write cannot be selected together.");
         }
 
-        return new CommandLineOptions(image, devices, read, write, verify, allocated, start, help, version, helper, pipe);
+        return new CommandLineOptions(image, devices, read, write, verify, allocated, start, help, version, listDevices, helper, pipe);
     }
 
     public static string HelpText => """
@@ -127,6 +132,7 @@ public sealed record CommandLineOptions(
           -oa, --only-allocated    Read/verify through the last allocated partition
           -s, --start              Start the selected operation after validation
               --version            Print the version
+              --list-devices       List detected physical devices and exit
           -h, --help               Show this help
 
         Images are byte-for-byte raw disk data. Compression and encryption are not supported.

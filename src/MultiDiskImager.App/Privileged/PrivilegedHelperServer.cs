@@ -12,6 +12,12 @@ internal static class PrivilegedHelperServer
 
     public static async Task<int> RunAsync(string pipeName)
     {
+        if (OperatingSystem.IsLinux() && !LinuxPrivilege.IsRoot)
+        {
+            Console.Error.WriteLine("The Linux raw-device helper must run as root through PolicyKit.");
+            return 2;
+        }
+
         using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await pipe.ConnectAsync(30_000).ConfigureAwait(false);
         using var reader = new StreamReader(pipe, leaveOpen: true);

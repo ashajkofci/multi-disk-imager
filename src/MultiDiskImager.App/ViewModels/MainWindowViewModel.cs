@@ -199,7 +199,7 @@ internal sealed class MainWindowViewModel : ObservableObject
                 }
             });
             Status = visible.Length == 0
-                ? OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? "No eligible removable devices found" : "This platform is not supported"
+                ? OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() || OperatingSystem.IsLinux() ? "No eligible removable devices found" : "This platform is not supported"
                 : $"{visible.Length} device{(visible.Length == 1 ? string.Empty : "s")} available";
         }
         catch (Exception exception)

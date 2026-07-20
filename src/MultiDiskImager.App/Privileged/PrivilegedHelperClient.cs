@@ -107,6 +107,25 @@ internal static class PrivilegedHelperClient
             startInfo.ArgumentList.Add("-e");
             startInfo.ArgumentList.Add(appleScript);
         }
+        else if (OperatingSystem.IsLinux())
+        {
+            const string pkexec = "/usr/bin/pkexec";
+            if (!File.Exists(pkexec))
+            {
+                throw new PlatformNotSupportedException("PolicyKit is required for raw disk access. Install the 'pkexec' package and try again.");
+            }
+
+            startInfo = new ProcessStartInfo
+            {
+                FileName = pkexec,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.ArgumentList.Add(executable);
+            startInfo.ArgumentList.Add("--privileged-helper");
+            startInfo.ArgumentList.Add("--pipe");
+            startInfo.ArgumentList.Add(pipeName);
+        }
         else
         {
             startInfo = new ProcessStartInfo

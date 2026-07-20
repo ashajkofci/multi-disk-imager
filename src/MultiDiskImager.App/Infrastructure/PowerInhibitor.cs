@@ -29,6 +29,25 @@ internal sealed class PlatformPowerInhibitor : IPowerInhibitor
             return ValueTask.FromResult<IPowerInhibitor>(new PlatformPowerInhibitor(process));
         }
 
+        if (OperatingSystem.IsLinux() && File.Exists("/usr/bin/systemd-inhibit"))
+        {
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "/usr/bin/systemd-inhibit",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                ArgumentList =
+                {
+                    "--what=sleep:idle",
+                    "--mode=block",
+                    "--why=Raw disk imaging is in progress",
+                    "/usr/bin/sleep",
+                    "infinity"
+                }
+            });
+            return ValueTask.FromResult<IPowerInhibitor>(new PlatformPowerInhibitor(process));
+        }
+
         return ValueTask.FromResult<IPowerInhibitor>(new NullPowerInhibitor());
     }
 
@@ -51,4 +70,3 @@ internal sealed class PlatformPowerInhibitor : IPowerInhibitor
     [DllImport("kernel32.dll")]
     private static extern uint SetThreadExecutionState(uint executionState);
 }
-
