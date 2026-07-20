@@ -22,15 +22,17 @@ The system disk is never offered as a target. Writes and wipes require administr
 
 ## Downloads
 
-SemVer releases publish unsigned, self-contained builds for:
+SemVer releases publish self-contained builds for:
 
-- Windows 10+ x64: one `.exe` with its runtime and native dependencies embedded.
+- Windows 10+ x64: an Authenticode-signed portable `.exe` and signed `.msix` installer.
 - macOS 12+ Intel: a zipped `.app`.
 - macOS 12+ Apple Silicon: a zipped `.app`.
 - Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
 - Ubuntu 22.04+ ARM64: a self-contained executable in a `.tar.gz` archive.
 
-Because the builds are intentionally unsigned, Windows SmartScreen or macOS Gatekeeper may warn on first launch. On macOS, use **Open** from Finder's context menu if Gatekeeper blocks the app. Administrator approval is requested only when raw-device access begins.
+macOS builds remain unsigned, so Gatekeeper may warn on first launch. Use **Open** from Finder's context menu if Gatekeeper blocks the app. Administrator approval is requested only when raw-device access begins.
+
+On Windows, install the `.msix` with App Installer or use the portable `.exe`. Both contain the .NET runtime and native dependencies. The MSIX declares the restricted capabilities needed to run the desktop application and request elevation for raw-device operations.
 
 On Ubuntu, extract the archive and run `./MultiDiskImager`. The executable contains the .NET runtime and application dependencies. Raw-device operations use the desktop's PolicyKit prompt through `pkexec`; the `policykit-1` and standard `util-linux` tools must be installed.
 
@@ -64,6 +66,30 @@ dotnet test MultiDiskImager.sln -c Release --no-build
 ```
 
 Create a release by pushing an annotated or lightweight SemVer tag such as `v1.2.3`. GitHub Actions validates the tag, builds every platform artifact, creates `SHA256SUMS.txt` and `release-manifest.json`, and attaches them to the GitHub Release.
+
+### Windows signing and MSIX setup
+
+The release workflow requires an exportable Authenticode code-signing certificate in password-protected PFX format. A certificate from a trusted code-signing certificate authority provides a publicly trusted publisher identity. A self-signed certificate can build and sign the artifacts, but must be installed as trusted on each destination computer before its MSIX can be installed.
+
+Configure these repository Actions secrets under **Settings → Secrets and variables → Actions**:
+
+- `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64 of the complete `.pfx` file.
+- `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`: Password protecting the PFX.
+
+Create the Base64 value in PowerShell with:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes('codesigning.pfx')) | Set-Clipboard
+```
+
+Optional repository Actions variables are:
+
+- `WINDOWS_TIMESTAMP_URL`: RFC 3161 timestamp service; defaults to DigiCert.
+- `WINDOWS_MSIX_IDENTITY_NAME`: MSIX package identity; defaults to `MultiDiskImager`. Set this to the identity reserved in Partner Center when applicable.
+
+The MSIX Publisher is derived from the certificate subject so the manifest and package signature match. The Windows job fails before upload when its secrets are missing, packaging fails, or either artifact fails signature verification. The temporary PFX and package staging directory are always deleted.
+
+The package uses the restricted `allowElevation` capability because raw-device operations require an administrator helper. Sideloaded GitHub releases support this capability; submission through Microsoft Store requires Microsoft approval.
 
 ## Safety
 
