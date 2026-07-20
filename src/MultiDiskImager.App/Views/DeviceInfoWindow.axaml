@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MultiDiskImager.Views.DeviceInfoWindow"
+        Width="620" Height="420" MinWidth="500" MinHeight="320"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20" RowSpacing="12">
+    <TextBlock x:Name="ModelText" FontSize="22" FontWeight="SemiBold" />
+    <TextBlock Grid.Row="1" x:Name="DetailsText" Opacity="0.75" TextWrapping="Wrap" />
+    <ScrollViewer Grid.Row="2">
+      <StackPanel x:Name="PartitionList" Spacing="8" />
+    </ScrollViewer>
+    <Button Grid.Row="3" Content="Close" HorizontalAlignment="Right" Click="OnClose" />
+  </Grid>
+</Window>
+

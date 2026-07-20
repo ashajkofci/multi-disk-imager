@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MultiDiskImager.Views.SettingsWindow"
+        Width="560" Height="650" CanResize="False"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        Title="Settings">
+  <Grid RowDefinitions="*,Auto" Margin="20" RowSpacing="16">
+    <ScrollViewer>
+      <StackPanel Spacing="14">
+        <TextBlock Text="General" FontSize="20" FontWeight="SemiBold" />
+        <CheckBox x:Name="WriteWarnings" Content="Display warnings before write and wipe" />
+        <CheckBox x:Name="Animations" Content="Enable animations" />
+        <CheckBox x:Name="UpdateChecks" Content="Check GitHub Releases for updates on startup" />
+        <CheckBox x:Name="SoundNotification" Content="Play a notification sound when finished" />
+        <CheckBox x:Name="AutoSelect" Content="Automatically select a single eligible device" />
+        <CheckBox x:Name="AutoClose" Content="Close after a fully successful operation" />
+        <CheckBox x:Name="AlwaysOnTop" Content="Keep the main window on top" />
+
+        <Separator />
+        <TextBlock Text="Device safety filters" FontSize="20" FontWeight="SemiBold" />
+        <CheckBox x:Name="ShowExternalHardDrives" Content="Show external hard drives (system disk is always hidden)" />
+        <Grid ColumnDefinitions="Auto,100,Auto" ColumnSpacing="8">
+          <CheckBox x:Name="LimitSize" Content="Hide devices larger than" VerticalAlignment="Center" />
+          <NumericUpDown Grid.Column="1" x:Name="LimitGiB" Minimum="1" Maximum="100000" Increment="1" FormatString="0" />
+          <TextBlock Grid.Column="2" Text="GiB" VerticalAlignment="Center" />
+        </Grid>
+
+        <Separator />
+        <TextBlock Text="Appearance" FontSize="20" FontWeight="SemiBold" />
+        <Grid ColumnDefinitions="140,*" ColumnSpacing="8">
+          <TextBlock Text="Theme" VerticalAlignment="Center" />
+          <ComboBox Grid.Column="1" x:Name="ThemeChoice">
+            <ComboBoxItem Content="System" />
+            <ComboBoxItem Content="Light" />
+            <ComboBoxItem Content="Dark" />
+          </ComboBox>
+        </Grid>
+        <Grid ColumnDefinitions="140,*" ColumnSpacing="8">
+          <TextBlock Text="Title extra" VerticalAlignment="Center" />
+          <ComboBox Grid.Column="1" x:Name="TitleExtra">
+            <ComboBoxItem Content="Nothing" />
+            <ComboBoxItem Content="Percent" />
+            <ComboBoxItem Content="Current speed" />
+            <ComboBoxItem Content="Remaining time" />
+            <ComboBoxItem Content="Active device" />
+            <ComboBoxItem Content="Image file name" />
+          </ComboBox>
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="Cancel" Click="OnCancel" />
+      <Button Classes="primary" Content="Save" Click="OnSave" />
+    </StackPanel>
+  </Grid>
+</Window>

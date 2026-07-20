@@ -1,0 +1,51 @@
+using System.Diagnostics;
+
+namespace MultiDiskImager.Infrastructure;
+
+internal sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError)
+{
+    public void EnsureSuccess(string operation)
+    {
+        if (ExitCode != 0)
+        {
+            throw new IOException($"{operation} failed ({ExitCode}): {StandardError.Trim()}");
+        }
+    }
+}
+
+internal static class ProcessRunner
+{
+    public static async Task<ProcessResult> RunAsync(
+        string fileName,
+        IEnumerable<string> arguments,
+        CancellationToken cancellationToken = default)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }
+        };
+
+        foreach (var argument in arguments)
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
+
+        if (!process.Start())
+        {
+            throw new IOException($"Unable to start {fileName}.");
+        }
+
+        var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        return new ProcessResult(process.ExitCode, await outputTask.ConfigureAwait(false), await errorTask.ConfigureAwait(false));
+    }
+}
+

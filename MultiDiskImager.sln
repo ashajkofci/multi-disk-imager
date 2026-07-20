@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDiskImager.Core", "src\MultiDiskImager.Core\MultiDiskImager.Core.csproj", "{2AF2E92B-2A56-4232-9637-14745C0CD5F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDiskImager.App", "src\MultiDiskImager.App\MultiDiskImager.App.csproj", "{75EFEC5E-E64C-45B5-87AF-F4F3555C8F6B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDiskImager.Core.Tests", "tests\MultiDiskImager.Core.Tests\MultiDiskImager.Core.Tests.csproj", "{31D36A97-2515-4CC9-B105-D19F6A73E4C0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2AF2E92B-2A56-4232-9637-14745C0CD5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AF2E92B-2A56-4232-9637-14745C0CD5F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AF2E92B-2A56-4232-9637-14745C0CD5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AF2E92B-2A56-4232-9637-14745C0CD5F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75EFEC5E-E64C-45B5-87AF-F4F3555C8F6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75EFEC5E-E64C-45B5-87AF-F4F3555C8F6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75EFEC5E-E64C-45B5-87AF-F4F3555C8F6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75EFEC5E-E64C-45B5-87AF-F4F3555C8F6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31D36A97-2515-4CC9-B105-D19F6A73E4C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31D36A97-2515-4CC9-B105-D19F6A73E4C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31D36A97-2515-4CC9-B105-D19F6A73E4C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31D36A97-2515-4CC9-B105-D19F6A73E4C0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
+

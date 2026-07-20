@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - id: version
+        shell: bash
+        run: |
+          tag='${{ github.ref_name }}'
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag must be SemVer, for example v1.2.3 or v1.2.3-rc.1" >&2
+            exit 1
+          fi
+          version="${tag#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+
+  publish:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            rid: win-x64
+            platform: windows
+            arch: x64
+          - runner: macos-15-intel
+            rid: osx-x64
+            platform: macos
+            arch: x64
+          - runner: macos-15
+            rid: osx-arm64
+            platform: macos
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - run: dotnet restore src/MultiDiskImager.App/MultiDiskImager.App.csproj --runtime ${{ matrix.rid }} --locked-mode
+      - name: Publish self-contained single file
+        shell: bash
+        run: >-
+          dotnet publish src/MultiDiskImager.App/MultiDiskImager.App.csproj
+          --configuration Release --runtime ${{ matrix.rid }} --self-contained true --no-restore
+          -p:Version=${{ needs.validate.outputs.version }}
+          -p:InformationalVersion=${{ needs.validate.outputs.version }}
+          -p:Repository=${{ github.repository }}
+          -p:PublishDir=${{ github.workspace }}/publish/
+      - name: Package Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Copy-Item publish/MultiDiskImager.exe "artifacts/multi-disk-imager-${{ needs.validate.outputs.version }}-windows-x64.exe"
+      - name: Package macOS app
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: bash scripts/package-macos.sh publish '${{ needs.validate.outputs.version }}' '${{ matrix.arch }}' artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: multi-disk-imager-${{ matrix.platform }}-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+
+  release:
+    needs: [validate, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: multi-disk-imager-*
+          path: artifacts
+          merge-multiple: true
+      - name: Generate checksums and release manifest
+        working-directory: artifacts
+        shell: bash
+        run: |
+          sha256sum multi-disk-imager-* > SHA256SUMS.txt
+          jq -n \
+            --arg version '${{ needs.validate.outputs.version }}' \
+            --arg tag '${{ github.ref_name }}' \
+            --arg repository '${{ github.repository }}' \
+            '{version:$version, tag:$tag, artifacts:[inputs]}' \
+            < <(for file in multi-disk-imager-*; do
+              jq -n --arg name "$file" --arg url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$file" '{name:$name,url:$url}'
+            done) > release-manifest.json
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create '${{ github.ref_name }}' artifacts/*
+          --repo '${{ github.repository }}'
+          --title 'Multi Disk Imager ${{ needs.validate.outputs.version }}'
+          --generate-notes
+          ${{ needs.validate.outputs.prerelease == 'true' && '--prerelease' || '' }}
