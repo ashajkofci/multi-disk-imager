@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using MultiDiskImager.Localization;
 using MultiDiskImager.Services;
 
 namespace MultiDiskImager.Views;
@@ -67,7 +68,7 @@ internal sealed partial class SettingsWindow : Window
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new Avalonia.Platform.Storage.FolderPickerOpenOptions
         {
-            Title = "Select default image folder",
+            Title = Localizer.Get("FilePicker"),
             AllowMultiple = false
         });
         var folder = folders.FirstOrDefault();

@@ -10,5 +10,8 @@
     <DebugType>embedded</DebugType>
     <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.1.0</VersionPrefix>
     <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(VersionPrefix)-dev</InformationalVersion>
+    <Company>bNovate Technologies SA</Company>
+    <Authors>Adrian Shajkofci</Authors>
+    <Copyright>Copyright © 2026 bNovate Technologies SA</Copyright>
   </PropertyGroup>
 </Project>

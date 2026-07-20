@@ -35,12 +35,12 @@ internal sealed partial class MainWindow : Window
         var suggestedFolder = await GetSuggestedFolderAsync();
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Select raw disk image",
+            Title = Localizer.Get("RawImage"),
             AllowMultiple = false,
             SuggestedStartLocation = suggestedFolder,
             FileTypeFilter =
             [
-                new FilePickerFileType("Raw disk image") { Patterns = ["*.img", "*.raw", "*.bin"] },
+                new FilePickerFileType(Localizer.Get("RawImage")) { Patterns = ["*.img", "*.raw", "*.bin"] },
                 FilePickerFileTypes.All
             ]
         });
@@ -80,11 +80,11 @@ internal sealed partial class MainWindow : Window
             {
                 var output = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
-                    Title = "Save raw disk image",
+                    Title = Localizer.Get("RawImage"),
                     SuggestedStartLocation = await GetSuggestedFolderAsync(),
                     SuggestedFileName = "disk.img",
                     DefaultExtension = "img",
-                    FileTypeChoices = [new FilePickerFileType("Raw disk image") { Patterns = ["*.img"] }]
+                    FileTypeChoices = [new FilePickerFileType(Localizer.Get("RawImage")) { Patterns = ["*.img"] }]
                 });
                 if (output is null)
                 {
@@ -152,7 +152,7 @@ internal sealed partial class MainWindow : Window
             var details = string.Join(Environment.NewLine, result.Devices.Select(device =>
                 $"{device.DeviceId}: {(device.Success ? "Success" : device.Error ?? "Failed")}" +
                 (device.FirstMismatchOffset is { } offset ? $" (first mismatch at byte {offset:N0})" : string.Empty)));
-            await new MessageDialog(result.Success ? "Operation complete" : "Operation results", details, "Close", cancelVisible: false).ShowDialog<bool>(this);
+            await new MessageDialog(result.Success ? "Operation complete" : "Operation results", details, Localizer.Get("Close"), cancelVisible: false).ShowDialog<bool>(this);
             if (result.Success && ViewModel.Settings.AutoCloseOnSuccess)
             {
                 _allowClose = true;
@@ -232,7 +232,7 @@ internal sealed partial class MainWindow : Window
         new MessageDialog(title, message, confirmText).ShowDialog<bool>(this);
 
     private Task<bool> ShowErrorAsync(string title, string message) =>
-        new MessageDialog(title, message, "Close", cancelVisible: false).ShowDialog<bool>(this);
+        new MessageDialog(title, message, Localizer.Get("Close"), cancelVisible: false).ShowDialog<bool>(this);
 
     private async Task<IStorageFolder?> GetSuggestedFolderAsync()
     {

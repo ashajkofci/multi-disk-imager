@@ -7,9 +7,6 @@
     <AssemblyName>MultiDiskImager</AssemblyName>
     <Product>bNovate Multi Disk Imager</Product>
     <Title>bNovate Multi Disk Imager</Title>
-    <Company>bNovate Technologies SA</Company>
-    <Authors>Adrian Shajkofci</Authors>
-    <Copyright>Copyright © 2026 bNovate Technologies SA</Copyright>
     <Description>Professional cross-platform raw disk imaging by bNovate Technologies SA.</Description>
     <ApplicationIcon Condition="$([MSBuild]::IsOSPlatform('Windows'))">Assets\AppIcon.ico</ApplicationIcon>
     <ApplicationManifest Condition="$([MSBuild]::IsOSPlatform('Windows'))">app.manifest</ApplicationManifest>
