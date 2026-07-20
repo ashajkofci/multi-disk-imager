@@ -175,18 +175,7 @@ internal sealed partial class MainWindow : Window
         }
     }
 
-    private async void OnAbout(object? sender, RoutedEventArgs e)
-    {
-        await new MessageDialog(
-            Localizer.Get("AboutTitle"),
-            $"bNovate Multi Disk Imager {Services.UpdateService.CurrentVersionText}{Environment.NewLine}{Environment.NewLine}" +
-            $"Copyright © 2026 bNovate Technologies SA{Environment.NewLine}" +
-            $"{Localizer.Get("Author")}: Adrian Shajkofci{Environment.NewLine}" +
-            $"https://www.bnovate.com{Environment.NewLine}{Environment.NewLine}" +
-            Localizer.Get("AboutDescription"),
-            Localizer.Get("Close"),
-            cancelVisible: false).ShowDialog<bool>(this);
-    }
+    private async void OnAbout(object? sender, RoutedEventArgs e) => await new AboutWindow().ShowDialog(this);
 
     private void OnOpenUpdate(object? sender, RoutedEventArgs e) => ViewModel.OpenUpdatePage();
 

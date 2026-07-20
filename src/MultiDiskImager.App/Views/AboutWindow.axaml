@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:MultiDiskImager.Localization"
+        x:Class="MultiDiskImager.Views.AboutWindow"
+        Width="520" SizeToContent="Height" CanResize="False"
+        Icon="/Assets/AppIcon.png"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        Title="{loc:Tr AboutTitle}">
+  <Grid RowDefinitions="Auto,*" Margin="24" ColumnDefinitions="96,*" ColumnSpacing="20" RowSpacing="16">
+    <Image Source="/Assets/AppIcon.png" Width="96" Height="96" VerticalAlignment="Top" />
+    <StackPanel Grid.Column="1" Spacing="8">
+      <TextBlock Text="bNovate Multi Disk Imager" FontSize="22" FontWeight="SemiBold" />
+      <TextBlock x:Name="VersionText" Opacity="0.72" />
+      <TextBlock Text="{loc:Tr AboutDescription}" TextWrapping="Wrap" />
+      <TextBlock Text="Copyright © 2026 bNovate Technologies SA" FontWeight="SemiBold" />
+      <TextBlock x:Name="AuthorText" />
+      <Button Content="https://www.bnovate.com"
+              HorizontalAlignment="Left" Padding="0,4"
+              Background="Transparent" Foreground="#2563EB"
+              Click="OnWebsite" />
+    </StackPanel>
+    <Button Grid.Row="1" Grid.Column="1" Content="{loc:Tr Close}"
+            HorizontalAlignment="Right" Click="OnClose" />
+  </Grid>
+</Window>

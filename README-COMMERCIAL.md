@@ -1,5 +1,7 @@
 # bNovate Multi Disk Imager
 
+<img src="src/MultiDiskImager.App/Assets/AppIcon.png" width="128" alt="bNovate Multi Disk Imager icon">
+
 ## Reliable disk deployment, without proprietary image formats
 
 bNovate Multi Disk Imager gives technical teams a focused desktop tool for creating, deploying, and validating raw disk images across Windows, macOS, and Ubuntu. One image can be written to several removable devices in parallel, helping reduce repetitive deployment time while preserving a transparent, byte-for-byte image format.

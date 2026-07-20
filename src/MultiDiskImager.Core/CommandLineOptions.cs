@@ -97,7 +97,7 @@ public sealed record CommandLineOptions(
                 case "-e":
                 case "-encryption":
                 case "--encryption":
-                    throw new ArgumentException($"{argument} is not supported. Multi Disk Imager uses raw, unencrypted .img files only.");
+                    throw new ArgumentException($"{argument} is not supported. bNovate Multi Disk Imager uses raw, unencrypted .img files only.");
                 default:
                     if (!argument.StartsWith("-", StringComparison.Ordinal) && args.Count == 1)
                     {
@@ -121,7 +121,7 @@ public sealed record CommandLineOptions(
     }
 
     public static string HelpText => """
-        Multi Disk Imager
+        bNovate Multi Disk Imager
 
         Usage: MultiDiskImager [image.img] [options]
           -i, --image PATH          Select a raw image file
