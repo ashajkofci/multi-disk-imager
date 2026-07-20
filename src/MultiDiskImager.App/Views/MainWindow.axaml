@@ -100,8 +100,19 @@
               <TextBlock Text="{Binding ProgressText}" />
               <Button Grid.Column="1" Classes="danger" Content="{loc:Tr Cancel}" Click="OnCancel" />
             </Grid>
+            <ItemsControl ItemsSource="{Binding DeviceProgress}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DeviceProgressViewModel">
+                  <Grid ColumnDefinitions="160,*,110" ColumnSpacing="8" Margin="0,2">
+                    <TextBlock Text="{Binding DeviceId}" TextTrimming="CharacterEllipsis" />
+                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Percentage}" Height="8" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding Details}" HorizontalAlignment="Right" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
             <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="8" />
-            <controls:SpeedGraph Samples="{Binding SpeedSamples}" Height="90" />
+            <controls:SpeedGraph Series="{Binding SpeedSeries}" Height="90" />
           </StackPanel>
         </Border>
       </StackPanel>

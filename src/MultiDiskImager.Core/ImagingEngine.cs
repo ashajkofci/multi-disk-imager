@@ -76,7 +76,15 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
                 }
 
                 processed += read;
-                ReportProgress(operation, processed, byteCount, "Transferring", stopwatch, ref lastReport, progress);
+                if (progress is not null && (stopwatch.Elapsed - lastReport >= TimeSpan.FromMilliseconds(200) || processed >= byteCount))
+                {
+                    lastReport = stopwatch.Elapsed;
+                    foreach (var writeResult in writeResults.Where(result => result.Error is null))
+                    {
+                        TimeSpan? remaining = writeResult.BytesPerSecond <= 0 ? null : TimeSpan.FromSeconds((byteCount - processed) / writeResult.BytesPerSecond);
+                        progress.Report(new ImagingProgress(operation, processed, byteCount, writeResult.BytesPerSecond, remaining, "Transferring", writeResult.DeviceId));
+                    }
+                }
             }
 
             foreach (var pair in active)
@@ -279,7 +287,7 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
         }
     }
 
-    private static async Task<(string DeviceId, Exception? Error)> WriteOneAsync(
+    private static async Task<(string DeviceId, Exception? Error, double BytesPerSecond)> WriteOneAsync(
         string id,
         Stream stream,
         ReadOnlyMemory<byte> buffer,
@@ -287,12 +295,14 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
     {
         try
         {
+            var started = Stopwatch.GetTimestamp();
             await stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
-            return (id, null);
+            var elapsed = Stopwatch.GetElapsedTime(started).TotalSeconds;
+            return (id, null, elapsed <= 0 ? 0 : buffer.Length / elapsed);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            return (id, exception);
+            return (id, exception, 0);
         }
     }
 

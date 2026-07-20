@@ -68,7 +68,7 @@ internal sealed partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            await ShowErrorAsync("Checksum failed", exception.Message);
+            await ShowErrorAsync(Localizer.Get("ChecksumFailed"), exception.Message);
         }
     }
 
@@ -98,7 +98,7 @@ internal sealed partial class MainWindow : Window
             var selected = ViewModel.SelectedDevices;
             if (selected.Count == 0)
             {
-                throw new InvalidOperationException("Select at least one device.");
+                throw new InvalidOperationException(Localizer.Get("SelectAtLeastOneDevice"));
             }
 
             var allowCrop = false;
@@ -152,7 +152,7 @@ internal sealed partial class MainWindow : Window
             var details = string.Join(Environment.NewLine, result.Devices.Select(device =>
                 $"{device.DeviceId}: {(device.Success ? "Success" : device.Error ?? "Failed")}" +
                 (device.FirstMismatchOffset is { } offset ? $" (first mismatch at byte {offset:N0})" : string.Empty)));
-            await new MessageDialog(result.Success ? "Operation complete" : "Operation results", details, Localizer.Get("Close"), cancelVisible: false).ShowDialog<bool>(this);
+            await new MessageDialog(result.Success ? Localizer.Get("OperationComplete") : Localizer.Get("OperationResults"), details, Localizer.Get("Close"), cancelVisible: false).ShowDialog<bool>(this);
             if (result.Success && ViewModel.Settings.AutoCloseOnSuccess)
             {
                 _allowClose = true;
@@ -209,7 +209,7 @@ internal sealed partial class MainWindow : Window
         }
 
         e.Cancel = true;
-        if (await ConfirmAsync("Cancel active operation?", "Stopping now may leave the target with incomplete or corrupt data.", "Cancel operation"))
+        if (await ConfirmAsync(Localizer.Get("CancelActiveOperation"), "Stopping now may leave the target with incomplete or corrupt data.", Localizer.Get("Cancel")))
         {
             ViewModel.Cancel();
             _allowClose = true;

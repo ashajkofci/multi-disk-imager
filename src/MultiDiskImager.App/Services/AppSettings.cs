@@ -33,6 +33,7 @@ internal sealed record AppSettings
     public bool AlwaysOnTop { get; init; }
     public AppTheme Theme { get; init; } = AppTheme.System;
     public TitleExtra TitleExtra { get; init; } = TitleExtra.Nothing;
+    public string Language { get; init; } = "system";
     public string? LastFolderPath { get; init; }
     public string? UserSpecifiedFolder { get; init; }
     public bool UseUserSpecifiedFolder { get; init; }
@@ -86,4 +87,3 @@ internal sealed class SettingsStore
         File.Move(temporary, _path, overwrite: true);
     }
 }
-

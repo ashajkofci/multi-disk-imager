@@ -82,7 +82,7 @@ The identity and publisher must be changed to the values assigned by Partner Cen
 
 ### Languages
 
-The application automatically follows the operating-system UI language. It includes English, French, German, Italian, Spanish, Portuguese, Dutch, Polish, Simplified Chinese, and Japanese, with English fallback for other locales.
+The application automatically follows the operating-system UI language. Settings also provides a language menu to force English, French, German, Italian, Spanish, Portuguese, Dutch, Polish, Simplified Chinese, or Japanese; the selection applies on the next launch. English is the fallback for other locales.
 
 ## Safety
 

@@ -56,7 +56,8 @@ public sealed record ImagingProgress(
     long TotalBytes,
     double BytesPerSecond,
     TimeSpan? Remaining,
-    string Stage)
+    string Stage,
+    string? DeviceId = null)
 {
     public double Fraction => TotalBytes <= 0 ? 0 : Math.Clamp((double)BytesProcessed / TotalBytes, 0, 1);
 }
@@ -99,4 +100,3 @@ public static class ByteSize
         return $"{value:0.##} {Units[unit]}";
     }
 }
-

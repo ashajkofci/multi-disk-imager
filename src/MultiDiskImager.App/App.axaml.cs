@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using MultiDiskImager.Core;
+using MultiDiskImager.Localization;
 using MultiDiskImager.Services;
 using MultiDiskImager.ViewModels;
 using MultiDiskImager.Views;
@@ -21,6 +22,7 @@ public sealed partial class App : Application
         {
             var settingsStore = new SettingsStore();
             var settings = settingsStore.LoadAsync().GetAwaiter().GetResult();
+            Localizer.Configure(settings.Language);
             RequestedThemeVariant = settings.Theme switch
             {
                 AppTheme.Light => ThemeVariant.Light,
@@ -35,4 +37,3 @@ public sealed partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 }
-

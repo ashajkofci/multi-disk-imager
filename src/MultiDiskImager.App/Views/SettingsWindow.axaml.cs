@@ -9,6 +9,7 @@ namespace MultiDiskImager.Views;
 
 internal sealed partial class SettingsWindow : Window
 {
+    private static readonly string[] LanguageCodes = ["system", "en", "fr", "de", "it", "es", "pt", "nl", "pl", "zh", "ja"];
     private readonly AppSettings _settings;
 
     public SettingsWindow(AppSettings settings)
@@ -28,6 +29,8 @@ internal sealed partial class SettingsWindow : Window
         this.FindControl<NumericUpDown>("LimitGiB")!.Value = (decimal)settings.OmitDrivesThresholdGiB;
         this.FindControl<ComboBox>("ThemeChoice")!.SelectedIndex = (int)settings.Theme;
         this.FindControl<ComboBox>("TitleExtra")!.SelectedIndex = (int)settings.TitleExtra;
+        var languageIndex = Array.IndexOf(LanguageCodes, settings.Language);
+        this.FindControl<ComboBox>("LanguageChoice")!.SelectedIndex = Math.Max(0, languageIndex);
         this.FindControl<TextBox>("CustomFolder")!.Text = settings.UserSpecifiedFolder;
         this.FindControl<TextBox>("CustomPlaces")!.Text = string.Join(Environment.NewLine, settings.CustomPlaces);
     }
@@ -57,7 +60,11 @@ internal sealed partial class SettingsWindow : Window
             OmitDrivesOverSize = Checked("LimitSize"),
             OmitDrivesThresholdGiB = (double)(this.FindControl<NumericUpDown>("LimitGiB")!.Value ?? 128),
             Theme = (AppTheme)Math.Max(0, this.FindControl<ComboBox>("ThemeChoice")!.SelectedIndex),
-            TitleExtra = (TitleExtra)Math.Max(0, this.FindControl<ComboBox>("TitleExtra")!.SelectedIndex)
+            TitleExtra = (TitleExtra)Math.Max(0, this.FindControl<ComboBox>("TitleExtra")!.SelectedIndex),
+            Language = LanguageCodes[Math.Clamp(
+                this.FindControl<ComboBox>("LanguageChoice")!.SelectedIndex,
+                0,
+                LanguageCodes.Length - 1)]
         };
         Close(result);
     }

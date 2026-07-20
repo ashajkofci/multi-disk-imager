@@ -652,7 +652,28 @@ public static class Localizer
         .Select((key, index) => (key, index))
         .ToDictionary(item => item.key, item => item.index, StringComparer.Ordinal);
 
-    private static readonly string Language = DetectLanguage();
+    private static readonly string[] AdditionalKeys =
+    [
+        "Language", "SystemDefault", "LanguageRestart", "Ready", "RefreshingDevices", "NoEligibleDevices",
+        "UnsupportedPlatform", "Preparing", "SelectAtLeastOneDevice", "OperationComplete", "OperationResults",
+        "Success", "Failed", "SelectFolder", "ChecksumFailed", "CancelActiveOperation"
+    ];
+
+    private static readonly IReadOnlyDictionary<string, string[]> AdditionalCatalogs = new Dictionary<string, string[]>
+    {
+        ["en"] = Extra("Language|System default|Language changes apply after restart.|Ready|Refreshing devices…|No eligible removable devices found|This platform is not supported|Preparing…|Select at least one device.|Operation complete|Operation results|Success|Failed|Select folder|Checksum failed|Cancel active operation?"),
+        ["fr"] = Extra("Langue|Langue du système|Le changement de langue s’applique après le redémarrage.|Prêt|Actualisation des périphériques…|Aucun périphérique amovible admissible trouvé|Cette plateforme n’est pas prise en charge|Préparation…|Sélectionnez au moins un périphérique.|Opération terminée|Résultats de l’opération|Réussite|Échec|Sélectionner un dossier|Échec de la somme de contrôle|Annuler l’opération en cours ?"),
+        ["de"] = Extra("Sprache|Systemsprache|Sprachänderungen gelten nach einem Neustart.|Bereit|Datenträger werden aktualisiert…|Keine geeigneten Wechseldatenträger gefunden|Diese Plattform wird nicht unterstützt|Vorbereitung…|Mindestens einen Datenträger auswählen.|Vorgang abgeschlossen|Vorgangsergebnisse|Erfolgreich|Fehlgeschlagen|Ordner auswählen|Prüfsumme fehlgeschlagen|Aktiven Vorgang abbrechen?"),
+        ["it"] = Extra("Lingua|Predefinita di sistema|Le modifiche della lingua si applicano dopo il riavvio.|Pronto|Aggiornamento dispositivi…|Nessun dispositivo rimovibile idoneo trovato|Questa piattaforma non è supportata|Preparazione…|Selezionare almeno un dispositivo.|Operazione completata|Risultati dell’operazione|Riuscito|Non riuscito|Seleziona cartella|Checksum non riuscito|Annullare l’operazione attiva?"),
+        ["es"] = Extra("Idioma|Predeterminado del sistema|Los cambios de idioma se aplican tras reiniciar.|Listo|Actualizando dispositivos…|No se encontraron dispositivos extraíbles aptos|Esta plataforma no es compatible|Preparando…|Seleccione al menos un dispositivo.|Operación completada|Resultados de la operación|Correcto|Error|Seleccionar carpeta|Error de suma de comprobación|¿Cancelar la operación activa?"),
+        ["pt"] = Extra("Idioma|Predefinição do sistema|As alterações de idioma são aplicadas após reiniciar.|Pronto|A atualizar dispositivos…|Não foram encontrados dispositivos amovíveis elegíveis|Esta plataforma não é suportada|A preparar…|Selecione pelo menos um dispositivo.|Operação concluída|Resultados da operação|Sucesso|Falhou|Selecionar pasta|Falha na soma de verificação|Cancelar a operação ativa?"),
+        ["nl"] = Extra("Taal|Systeemstandaard|Taalwijzigingen gelden na opnieuw starten.|Gereed|Apparaten vernieuwen…|Geen geschikte verwisselbare apparaten gevonden|Dit platform wordt niet ondersteund|Voorbereiden…|Selecteer ten minste één apparaat.|Bewerking voltooid|Bewerkingsresultaten|Geslaagd|Mislukt|Map selecteren|Controlesom mislukt|Actieve bewerking annuleren?"),
+        ["pl"] = Extra("Język|Domyślny systemu|Zmiana języka zostanie zastosowana po ponownym uruchomieniu.|Gotowe|Odświeżanie urządzeń…|Nie znaleziono odpowiednich urządzeń wymiennych|Ta platforma nie jest obsługiwana|Przygotowywanie…|Wybierz co najmniej jedno urządzenie.|Operacja zakończona|Wyniki operacji|Sukces|Niepowodzenie|Wybierz folder|Obliczanie sumy kontrolnej nie powiodło się|Anulować aktywną operację?"),
+        ["zh"] = Extra("语言|系统默认|语言更改将在重新启动后生效。|就绪|正在刷新设备…|未找到符合条件的可移动设备|不支持此平台|正在准备…|请至少选择一个设备。|操作完成|操作结果|成功|失败|选择文件夹|校验和计算失败|取消当前操作？"),
+        ["ja"] = Extra("言語|システムの既定|言語の変更は再起動後に適用されます。|準備完了|デバイスを更新中…|対象のリムーバブルデバイスが見つかりません|このプラットフォームはサポートされていません|準備中…|少なくとも1台のデバイスを選択してください。|操作完了|操作結果|成功|失敗|フォルダーを選択|チェックサムに失敗しました|実行中の操作をキャンセルしますか？"),
+    };
+
+    private static string Language = DetectLanguage();
 
     static Localizer()
     {
@@ -663,17 +684,29 @@ public static class Localizer
                 throw new InvalidOperationException($"Localization catalog '{language}' has {values.Length} values; expected {Keys.Length}.");
             }
         }
+        foreach (var (language, values) in AdditionalCatalogs)
+        {
+            if (values.Length != AdditionalKeys.Length)
+            {
+                throw new InvalidOperationException($"Additional localization catalog '{language}' is incomplete.");
+            }
+        }
     }
 
     public static string Get(string key)
     {
         if (!KeyIndexes.TryGetValue(key, out var index))
         {
-            return key;
+            var additionalIndex = Array.IndexOf(AdditionalKeys, key);
+            return additionalIndex < 0 ? key : AdditionalCatalogs[Language][additionalIndex];
         }
 
         return Catalogs.TryGetValue(Language, out var catalog) ? catalog[index] : Catalogs["en"][index];
     }
+
+    public static void Configure(string? language) => Language =
+        string.IsNullOrWhiteSpace(language) || language == "system" ? DetectLanguage() :
+        Catalogs.ContainsKey(language) ? language : "en";
 
     private static string DetectLanguage()
     {
@@ -683,6 +716,8 @@ public static class Localizer
 
     private static string[] Lines(string value) => value
         .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static string[] Extra(string value) => value.Split('|');
 }
 
 public sealed class TrExtension(string key) : MarkupExtension

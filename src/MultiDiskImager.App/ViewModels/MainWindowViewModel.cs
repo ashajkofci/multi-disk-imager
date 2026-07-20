@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Styling;
 using MultiDiskImager.Core;
+using MultiDiskImager.Localization;
 using MultiDiskImager.Platform;
 using MultiDiskImager.Privileged;
 using MultiDiskImager.Services;
@@ -22,12 +23,12 @@ internal sealed class MainWindowViewModel : ObservableObject
     private bool _onlyAllocated;
     private bool _isBusy;
     private bool _isRefreshing;
-    private string _status = "Ready";
+    private string _status = Localizer.Get("Ready");
     private string _checksum = string.Empty;
     private ChecksumAlgorithm _checksumAlgorithm = ChecksumAlgorithm.Sha256;
     private double _progress;
     private string _progressText = string.Empty;
-    private IReadOnlyList<double> _speedSamples = [];
+    private IReadOnlyDictionary<string, IReadOnlyList<double>> _speedSeries = new Dictionary<string, IReadOnlyList<double>>();
     private UpdateInfo? _availableUpdate;
     private ImagingProgress? _lastProgress;
 
@@ -42,6 +43,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     }
 
     public ObservableCollection<DeviceItemViewModel> Devices { get; } = [];
+    public ObservableCollection<DeviceProgressViewModel> DeviceProgress { get; } = [];
     public IReadOnlyList<ChecksumAlgorithm> ChecksumAlgorithms { get; } = Enum.GetValues<ChecksumAlgorithm>();
     public AppSettings Settings => _settings;
 
@@ -119,10 +121,10 @@ internal sealed class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _progressText, value);
     }
 
-    public IReadOnlyList<double> SpeedSamples
+    public IReadOnlyDictionary<string, IReadOnlyList<double>> SpeedSeries
     {
-        get => _speedSamples;
-        private set => SetProperty(ref _speedSamples, value);
+        get => _speedSeries;
+        private set => SetProperty(ref _speedSeries, value);
     }
 
     public UpdateInfo? AvailableUpdate
@@ -175,7 +177,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         }
 
         IsRefreshing = true;
-        Status = "Refreshing devices…";
+        Status = Localizer.Get("RefreshingDevices");
         var selected = Devices.Where(item => item.IsSelected).Select(item => item.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         try
         {
@@ -200,7 +202,7 @@ internal sealed class MainWindowViewModel : ObservableObject
                 }
             });
             Status = visible.Length == 0
-                ? OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() || OperatingSystem.IsLinux() ? "No eligible removable devices found" : "This platform is not supported"
+                ? OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() || OperatingSystem.IsLinux() ? Localizer.Get("NoEligibleDevices") : Localizer.Get("UnsupportedPlatform")
                 : $"{visible.Length} device{(visible.Length == 1 ? string.Empty : "s")} available";
         }
         catch (Exception exception)
@@ -220,9 +222,10 @@ internal sealed class MainWindowViewModel : ObservableObject
         Progress = 0;
         _lastProgress = null;
         RaisePropertyChanged(nameof(WindowTitle));
-        ProgressText = "Preparing…";
+        ProgressText = Localizer.Get("Preparing");
         Checksum = string.Empty;
-        SpeedSamples = [];
+        DeviceProgress.Clear();
+        SpeedSeries = new Dictionary<string, IReadOnlyList<double>>();
         _operationCancellation = new CancellationTokenSource();
         var selected = SelectedDevices;
 
@@ -356,14 +359,26 @@ internal sealed class MainWindowViewModel : ObservableObject
         Progress = value.Fraction * 100;
         var remaining = value.Remaining is { } duration && duration > TimeSpan.Zero ? $" • {duration:hh\\:mm\\:ss} remaining" : string.Empty;
         ProgressText = $"{value.Stage} • {value.Fraction:P0} • {ByteSize.Format(value.BytesProcessed)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)value.BytesPerSecond)}/s{remaining}";
-        var samples = SpeedSamples.ToList();
+        var key = value.DeviceId ?? "Operation";
+        var item = DeviceProgress.FirstOrDefault(candidate => candidate.DeviceId == key);
+        if (item is null)
+        {
+            item = new DeviceProgressViewModel(key);
+            DeviceProgress.Add(item);
+        }
+        item.Percentage = value.Fraction * 100;
+        item.Details = $"{value.Fraction:P0} • {ByteSize.Format((long)value.BytesPerSecond)}/s";
+
+        var updated = SpeedSeries.ToDictionary(pair => pair.Key, pair => pair.Value.ToList(), StringComparer.Ordinal);
+        var samples = updated.TryGetValue(key, out var existing) ? existing : [];
         samples.Add(value.BytesPerSecond);
         if (samples.Count > 90)
         {
             samples.RemoveAt(0);
         }
 
-        SpeedSamples = samples;
+        updated[key] = samples;
+        SpeedSeries = updated.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<double>)pair.Value, StringComparer.Ordinal);
     }
 
     private void Validate(ImagingOperation operation)
@@ -371,7 +386,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         var selected = SelectedDevices;
         if (selected.Count == 0)
         {
-            throw new InvalidOperationException("Select at least one device.");
+            throw new InvalidOperationException(Localizer.Get("SelectAtLeastOneDevice"));
         }
 
         if (selected.Any(device => device.IsSystem))
