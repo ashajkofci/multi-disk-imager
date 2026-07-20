@@ -1,6 +1,8 @@
-# Multi Disk Imager
+# bNovate Multi Disk Imager
 
-Multi Disk Imager is a cross-platform desktop utility for reading, writing, and verifying raw disk images. It can write one image to several devices concurrently and preserves a plain, byte-for-byte `.img` format.
+bNovate Multi Disk Imager is a cross-platform desktop utility from [bNovate Technologies SA](https://www.bnovate.com) for reading, writing, and verifying raw disk images. It can write one image to several devices concurrently and preserves a plain, byte-for-byte `.img` format.
+
+For a product-oriented overview, see [README-COMMERCIAL.md](README-COMMERCIAL.md).
 
 Unlike the original dotNet Disk Imager, this application deliberately has no ZIP compression or encryption mode. It never adds a header, container, or proprietary metadata to an image.
 
@@ -24,15 +26,15 @@ The system disk is never offered as a target. Writes and wipes require administr
 
 SemVer releases publish self-contained builds for:
 
-- Windows 10+ x64: an Authenticode-signed portable `.exe` and signed `.msix` installer.
+- Windows 10+ x64: an unsigned portable `.exe` and unsigned `.msix` package.
 - macOS 12+ Intel: a zipped `.app`.
 - macOS 12+ Apple Silicon: a zipped `.app`.
 - Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
 - Ubuntu 22.04+ ARM64: a self-contained executable in a `.tar.gz` archive.
 
-macOS builds remain unsigned, so Gatekeeper may warn on first launch. Use **Open** from Finder's context menu if Gatekeeper blocks the app. Administrator approval is requested only when raw-device access begins.
+The release artifacts are unsigned. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. On macOS, use **Open** from Finder's context menu if Gatekeeper blocks the app. Administrator approval is requested only when raw-device access begins.
 
-On Windows, install the `.msix` with App Installer or use the portable `.exe`. Both contain the .NET runtime and native dependencies. The MSIX declares the restricted capabilities needed to run the desktop application and request elevation for raw-device operations.
+On Windows, use the portable `.exe` directly. The pipeline also produces an unsigned `.msix` for enterprise or downstream distribution workflows; Windows requires that package to be signed before normal App Installer installation. Both contain the .NET runtime and native dependencies.
 
 On Ubuntu, extract the archive and run `./MultiDiskImager`. The executable contains the .NET runtime and application dependencies. Raw-device operations use the desktop's PolicyKit prompt through `pkexec`; the `policykit-1` and standard `util-linux` tools must be installed.
 
@@ -67,29 +69,20 @@ dotnet test MultiDiskImager.sln -c Release --no-build
 
 Create a release by pushing an annotated or lightweight SemVer tag such as `v1.2.3`. GitHub Actions validates the tag, builds every platform artifact, creates `SHA256SUMS.txt` and `release-manifest.json`, and attaches them to the GitHub Release.
 
-### Windows signing and MSIX setup
+### Windows MSIX setup
 
-The release workflow requires an exportable Authenticode code-signing certificate in password-protected PFX format. A certificate from a trusted code-signing certificate authority provides a publicly trusted publisher identity. A self-signed certificate can build and sign the artifacts, but must be installed as trusted on each destination computer before its MSIX can be installed.
-
-Configure these repository Actions secrets under **Settings → Secrets and variables → Actions**:
-
-- `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64 of the complete `.pfx` file.
-- `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`: Password protecting the PFX.
-
-Create the Base64 value in PowerShell with:
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes('codesigning.pfx')) | Set-Clipboard
-```
+The Windows job uses the SDK's MakeAppx tool to create an unsigned MSIX. No signing certificate or GitHub secret is required.
 
 Optional repository Actions variables are:
 
-- `WINDOWS_TIMESTAMP_URL`: RFC 3161 timestamp service; defaults to DigiCert.
-- `WINDOWS_MSIX_IDENTITY_NAME`: MSIX package identity; defaults to `MultiDiskImager`. Set this to the identity reserved in Partner Center when applicable.
+- `WINDOWS_MSIX_IDENTITY_NAME`: Package identity; defaults to `bNovate.MultiDiskImager`.
+- `WINDOWS_MSIX_PUBLISHER`: Manifest publisher; defaults to `CN=bNovate Technologies SA`.
 
-The MSIX Publisher is derived from the certificate subject so the manifest and package signature match. The Windows job fails before upload when its secrets are missing, packaging fails, or either artifact fails signature verification. The temporary PFX and package staging directory are always deleted.
+The identity and publisher must be changed to the values assigned by Partner Center or the downstream signing certificate when the package is prepared for installation. The package declares `runFullTrust` and `allowElevation` because raw-device operations use an administrator helper; Microsoft Store submission of `allowElevation` requires approval.
 
-The package uses the restricted `allowElevation` capability because raw-device operations require an administrator helper. Sideloaded GitHub releases support this capability; submission through Microsoft Store requires Microsoft approval.
+### Languages
+
+The application automatically follows the operating-system UI language. It includes English, French, German, Italian, Spanish, Portuguese, Dutch, Polish, Simplified Chinese, and Japanese, with English fallback for other locales.
 
 ## Safety
 
@@ -98,3 +91,5 @@ Raw disk imaging can destroy data. Confirm the model, capacity, and platform dev
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Copyright © 2026 bNovate Technologies SA. Author: Adrian Shajkofci.
