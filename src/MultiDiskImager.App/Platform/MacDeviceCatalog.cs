@@ -8,9 +8,12 @@ namespace MultiDiskImager.Platform;
 [SupportedOSPlatform("macos")]
 internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
 {
+    private static readonly TimeSpan DiskUtilTimeout = TimeSpan.FromSeconds(15);
+    private IReadOnlySet<string>? _systemDiskIds;
+
     public async Task<IReadOnlyList<DeviceDescriptor>> GetDevicesAsync(CancellationToken cancellationToken = default)
     {
-        var listResult = await ProcessRunner.RunAsync("/usr/sbin/diskutil", ["list", "-plist", "physical"], cancellationToken).ConfigureAwait(false);
+        var listResult = await RunDiskUtilAsync(["list", "-plist", "physical"], "Disk enumeration", cancellationToken).ConfigureAwait(false);
         listResult.EnsureSuccess("Disk enumeration");
         var list = MacPlist.Parse(listResult.StandardOutput);
         var systemIds = await GetSystemDiskIdsAsync(cancellationToken).ConfigureAwait(false);
@@ -24,7 +27,7 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
                 continue;
             }
 
-            var infoResult = await ProcessRunner.RunAsync("/usr/sbin/diskutil", ["info", "-plist", id], cancellationToken).ConfigureAwait(false);
+            var infoResult = await RunDiskUtilAsync(["info", "-plist", id], $"Inspecting {id}", cancellationToken).ConfigureAwait(false);
             if (infoResult.ExitCode != 0)
             {
                 continue;
@@ -37,41 +40,56 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
                 continue;
             }
 
-            var internalDisk = info.Boolean("Internal");
-            var removable = info.Boolean("RemovableMedia") || info.Boolean("Ejectable");
-            var protocol = info.String("BusProtocol") ?? info.String("Protocol") ?? "Unknown";
-            var external = !internalDisk || removable;
             var mountPoints = disk.DictionaryArray("Partitions")
                 .Select(partition => partition.String("MountPoint"))
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Cast<string>()
                 .ToArray();
 
-            devices.Add(new DeviceDescriptor(
-                id,
-                info.String("DeviceNode") ?? $"/dev/{id}",
-                info.String("MediaName") ?? info.String("IORegistryEntryName") ?? "Unknown disk",
-                info.String("SerialNumber") ?? info.String("DiskUUID") ?? info.String("MediaUUID"),
-                info.Integer("TotalSize", disk.Integer("Size")),
-                checked((int)info.Integer("DeviceBlockSize", 512)),
-                protocol,
-                removable,
-                external,
-                !info.Boolean("Writable", fallback: true),
-                systemIds.Contains(id),
-                mountPoints));
+            devices.Add(CreateDescriptor(info, id, disk.Integer("Size"), systemIds.Contains(id), mountPoints));
         }
 
         return devices.OrderBy(device => device.Id, StringComparer.Ordinal).ToArray();
     }
 
-    public async Task<DeviceDescriptor?> GetDeviceAsync(string id, CancellationToken cancellationToken = default) =>
-        (await GetDevicesAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault(device => device.Id.Equals(id, StringComparison.Ordinal));
-
-    private static async Task<IReadOnlySet<string>> GetSystemDiskIdsAsync(CancellationToken cancellationToken)
+    public async Task<DeviceDescriptor?> GetDeviceAsync(string id, CancellationToken cancellationToken = default)
     {
+        if (!Regex.IsMatch(id, @"^disk\d+$", RegexOptions.CultureInvariant))
+        {
+            return null;
+        }
+
+        // Revalidation runs inside the privileged helper. Querying the complete
+        // catalog here made every selected device repeat all diskutil calls and
+        // allowed an unrelated disk to block an operation indefinitely.
+        var infoResult = await RunDiskUtilAsync(["info", "-plist", id], $"Inspecting {id}", cancellationToken).ConfigureAwait(false);
+        if (infoResult.ExitCode != 0)
+        {
+            return null;
+        }
+
+        var info = MacPlist.Parse(infoResult.StandardOutput);
+        if (!info.Boolean("Whole", fallback: true) ||
+            string.Equals(info.String("VirtualOrPhysical"), "Virtual", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var systemIds = await GetSystemDiskIdsAsync(cancellationToken).ConfigureAwait(false);
+        var mountPoint = info.String("MountPoint");
+        IReadOnlyList<string> mountPoints = string.IsNullOrWhiteSpace(mountPoint) ? [] : [mountPoint];
+        return CreateDescriptor(info, id, 0, systemIds.Contains(id), mountPoints);
+    }
+
+    private async Task<IReadOnlySet<string>> GetSystemDiskIdsAsync(CancellationToken cancellationToken)
+    {
+        if (_systemDiskIds is not null)
+        {
+            return _systemDiskIds;
+        }
+
         var systemIds = new HashSet<string>(StringComparer.Ordinal);
-        var result = await ProcessRunner.RunAsync("/usr/sbin/diskutil", ["info", "-plist", "/"], cancellationToken).ConfigureAwait(false);
+        var result = await RunDiskUtilAsync(["info", "-plist", "/"], "Identifying the system disk", cancellationToken).ConfigureAwait(false);
         if (result.ExitCode != 0)
         {
             return systemIds;
@@ -89,6 +107,49 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
             }
         }
 
-        return systemIds;
+        _systemDiskIds = systemIds;
+        return _systemDiskIds;
+    }
+
+    private static DeviceDescriptor CreateDescriptor(
+        MacPlist info,
+        string id,
+        long fallbackSize,
+        bool isSystem,
+        IReadOnlyList<string> mountPoints)
+    {
+        var internalDisk = info.Boolean("Internal");
+        var removable = info.Boolean("RemovableMedia") || info.Boolean("Ejectable");
+        var protocol = info.String("BusProtocol") ?? info.String("Protocol") ?? "Unknown";
+        return new DeviceDescriptor(
+            id,
+            info.String("DeviceNode") ?? $"/dev/{id}",
+            info.String("MediaName") ?? info.String("IORegistryEntryName") ?? "Unknown disk",
+            info.String("SerialNumber") ?? info.String("DiskUUID") ?? info.String("MediaUUID"),
+            info.Integer("TotalSize", fallbackSize),
+            checked((int)info.Integer("DeviceBlockSize", 512)),
+            protocol,
+            removable,
+            !internalDisk || removable,
+            !info.Boolean("Writable", fallback: true),
+            isSystem,
+            mountPoints);
+    }
+
+    private static async Task<ProcessResult> RunDiskUtilAsync(
+        IEnumerable<string> arguments,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(DiskUtilTimeout);
+        try
+        {
+            return await ProcessRunner.RunAsync("/usr/sbin/diskutil", arguments, timeout.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new IOException($"{operation} timed out. Reconnect the disk and try again.");
+        }
     }
 }
