@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:MultiDiskImager.Localization"
+        x:Class="MultiDiskImager.Views.HelpWindow"
+        Width="720" Height="760" MinWidth="560" MinHeight="520"
+        Icon="/Assets/AppIcon.png"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        Title="{loc:Tr HelpTitle}">
+  <Grid RowDefinitions="*,Auto" Margin="24" RowSpacing="16">
+    <ScrollViewer>
+      <StackPanel Spacing="18">
+        <StackPanel Spacing="6">
+          <TextBlock Text="{loc:Tr HelpTitle}" FontSize="24" FontWeight="SemiBold" />
+          <TextBlock Text="{loc:Tr HelpIntro}" TextWrapping="Wrap" Opacity="0.75" />
+        </StackPanel>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Text="{loc:Tr GettingStarted}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{loc:Tr HelpStep1}" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Tr HelpStep2}" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Tr HelpStep3}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <StackPanel Spacing="10">
+          <TextBlock Text="{loc:Tr Operations}" FontSize="20" FontWeight="SemiBold" />
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Tr ReadDevice}" FontSize="16" FontWeight="SemiBold" />
+              <TextBlock Text="{loc:Tr HelpRead}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Tr WriteImage}" FontSize="16" FontWeight="SemiBold" />
+              <TextBlock Text="{loc:Tr HelpWrite}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Tr Verify}" FontSize="16" FontWeight="SemiBold" />
+              <TextBlock Text="{loc:Tr HelpVerify}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Tr QuickWipe}" FontSize="16" FontWeight="SemiBold" />
+              <TextBlock Text="{loc:Tr HelpWipe}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Text="{loc:Tr HelpOptionsTitle}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{loc:Tr HelpOnlyAllocated}" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Tr HelpVerifyAfter}" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Tr HelpChecksum}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" BorderBrush="#B91C1C">
+          <StackPanel Spacing="8">
+            <TextBlock Text="{loc:Tr HelpSafetyTitle}" FontSize="18" FontWeight="SemiBold" Foreground="#DC2626" />
+            <TextBlock Text="{loc:Tr HelpSafety}" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Tr HelpAdmin}" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Tr HelpCancel}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+    <Button Grid.Row="1" Content="{loc:Tr Close}" HorizontalAlignment="Right" Click="OnClose" />
+  </Grid>
+</Window>

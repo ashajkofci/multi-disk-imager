@@ -175,6 +175,17 @@ internal sealed partial class MainWindow : Window
         }
     }
 
+    private async void OnHelp(object? sender, RoutedEventArgs e) => await new HelpWindow().ShowDialog(this);
+
+    private async void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F1)
+        {
+            e.Handled = true;
+            await new HelpWindow().ShowDialog(this);
+        }
+    }
+
     private async void OnAbout(object? sender, RoutedEventArgs e) => await new AboutWindow().ShowDialog(this);
 
     private void OnOpenUpdate(object? sender, RoutedEventArgs e) => ViewModel.OpenUpdatePage();

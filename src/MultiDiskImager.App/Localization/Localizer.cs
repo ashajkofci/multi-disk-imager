@@ -695,6 +695,16 @@ public static class Localizer
         ["ja"] = Extra("{0}台のデバイスが利用可能|デバイスの更新に失敗しました|操作をキャンセルしました。ターゲットに不完全なデータが残る可能性があります|正常に完了しました|一部のデバイスで完了しました|既存のイメージファイルを選択してください。|システムディスクは選択できません。|読み取り元は1台だけ選択してください。|イメージのパスを選択してください。|選択したイメージは存在しません。|選択したデバイスの一部が読み取り専用です。|残り|完了|転送中|バージョン|バイト|バイトセクター|シリアル番号|イメージを置き換えますか？|は既に存在し、置き換えられます。|置き換え|イメージが大きすぎます|切り詰めて書き込む|停止するとターゲットに不完全または破損したデータが残る可能性があります。"),
     };
 
+    private static readonly string[] HelpKeys =
+    [
+        "Help", "HelpTitle", "HelpIntro", "GettingStarted", "HelpStep1", "HelpStep2", "HelpStep3", "Operations",
+        "HelpRead", "HelpWrite", "HelpVerify", "HelpWipe", "HelpOptionsTitle", "HelpOnlyAllocated",
+        "HelpVerifyAfter", "HelpChecksum", "HelpSafetyTitle", "HelpSafety", "HelpAdmin", "HelpCancel"
+    ];
+
+    private static readonly string[] HelpCatalog = Extra(
+        "Help|Help and quick start|Choose what you want to do, confirm the physical devices, and follow the progress without needing disk-imaging experience.|Getting started|1. Refresh the device list, then identify each physical drive by its model, capacity, and device ID. Use Info when you need more details.|2. Select the physical drive or drives. For writing or verification, also choose the raw image file at the top of the main window.|3. Choose an operation at the bottom of the window. Review every confirmation carefully before allowing access.|Operations|Creates a raw .img file from exactly one selected physical drive. If no output path is set, the app asks where to save it.|Copies the selected raw image to all selected drives in parallel. Existing data and partitions on those drives are overwritten.|Compares the image with the selected drives without changing them. A failed result includes the position of the first different byte.|Removes partition and filesystem metadata near the start and end of each selected drive. This is destructive, but it is not a secure full-disk erase.|Options and checks|Only allocated limits reading or verification to the end of the last detected MBR or GPT partition, which can save time and image space.|Verify after automatically compares the completed read or write with the physical drive before reporting success.|Calculate creates an MD5, SHA-1, or SHA-256 checksum for the selected image file. You can compare it with a trusted checksum to detect changes.|Before you continue|Writing and quick wiping destroy data. Confirm the model, capacity, and device ID of every selected drive. The system disk is hidden for protection.|The operating system may ask for administrator approval only when raw access to a physical drive begins.|Canceling, disconnecting a drive, or losing power during a write can leave that drive incomplete or unusable until it is written again.");
+
     private static string Language = DetectLanguage();
 
     static Localizer()
@@ -717,6 +727,10 @@ public static class Localizer
         {
             if (values.Length != UiKeys.Length) throw new InvalidOperationException($"UI localization catalog '{language}' is incomplete.");
         }
+        if (HelpCatalog.Length != HelpKeys.Length)
+        {
+            throw new InvalidOperationException("Help localization catalog is incomplete.");
+        }
     }
 
     public static string Get(string key)
@@ -726,7 +740,9 @@ public static class Localizer
             var additionalIndex = Array.IndexOf(AdditionalKeys, key);
             if (additionalIndex >= 0) return AdditionalCatalogs[Language][additionalIndex];
             var uiIndex = Array.IndexOf(UiKeys, key);
-            return uiIndex < 0 ? key : UiCatalogs[Language][uiIndex];
+            if (uiIndex >= 0) return UiCatalogs[Language][uiIndex];
+            var helpIndex = Array.IndexOf(HelpKeys, key);
+            return helpIndex < 0 ? key : HelpCatalog[helpIndex];
         }
 
         return Catalogs.TryGetValue(Language, out var catalog) ? catalog[index] : Catalogs["en"][index];
