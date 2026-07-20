@@ -53,8 +53,8 @@ Legacy compression (`-z`) and encryption (`-e`) arguments fail with a clear erro
 The app targets .NET 8 for its runtime baseline. Avalonia 12's source generators require the .NET 10 SDK to build it.
 
 ```bash
-dotnet restore --locked-mode
-dotnet build MultiDiskImager.sln -c Release --no-restore
+dotnet restore MultiDiskImager.sln --locked-mode -m:1
+dotnet build MultiDiskImager.sln -c Release --no-restore -m:1
 dotnet test MultiDiskImager.sln -c Release --no-build
 ```
 

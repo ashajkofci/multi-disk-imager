@@ -22,6 +22,6 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
-      - run: dotnet restore MultiDiskImager.sln --locked-mode
-      - run: dotnet build MultiDiskImager.sln --configuration Release --no-restore
+      - run: dotnet restore MultiDiskImager.sln --locked-mode -m:1
+      - run: dotnet build MultiDiskImager.sln --configuration Release --no-restore -m:1
       - run: dotnet test tests/MultiDiskImager.Core.Tests/MultiDiskImager.Core.Tests.csproj --configuration Release --no-build
