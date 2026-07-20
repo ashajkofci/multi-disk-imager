@@ -53,6 +53,7 @@ internal sealed partial class MainWindow : Window
     }
 
     private async void OnRefresh(object? sender, RoutedEventArgs e) => await ViewModel.RefreshDevicesAsync();
+    private void OnSelectAll(object? sender, RoutedEventArgs e) => ViewModel.SelectAllDevices();
     private async void OnRead(object? sender, RoutedEventArgs e) => await RunOperationAsync(ImagingOperation.Read);
     private async void OnWrite(object? sender, RoutedEventArgs e) => await RunOperationAsync(ImagingOperation.Write);
     private async void OnVerify(object? sender, RoutedEventArgs e) => await RunOperationAsync(ImagingOperation.Verify);

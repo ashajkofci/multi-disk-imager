@@ -84,6 +84,7 @@ internal static class PrivilegedHelperServer
         IProgress<ImagingProgress> progress,
         CancellationToken cancellationToken)
     {
+        ReportStage(progress, request.Operation, "Checking selected devices…");
         var catalog = PlatformServices.CreateCatalog();
         var rawAccess = PlatformServices.CreateRawAccess();
         var devices = await ValidateDevicesAsync(catalog, request.Devices, cancellationToken).ConfigureAwait(false);
@@ -96,8 +97,10 @@ internal static class PrivilegedHelperServer
             var writing = request.Operation is ImagingOperation.Write or ImagingOperation.Wipe;
             foreach (var device in devices)
             {
+                ReportStage(progress, request.Operation, $"Preparing {device.Id}…", device.Id);
                 await rawAccess.PrepareAsync(device, writing, cancellationToken).ConfigureAwait(false);
                 prepared.Add(device);
+                ReportStage(progress, request.Operation, $"Opening {device.Id}…", device.Id);
                 streams[device.Id] = rawAccess.Open(device, writing ? FileAccess.ReadWrite : FileAccess.Read);
             }
 
@@ -147,13 +150,17 @@ internal static class PrivilegedHelperServer
         var byteCount = request.ByteCount ?? device.Size;
         if (request.OnlyAllocated)
         {
+            ReportStage(progress, ImagingOperation.Read, "Reading the partition table…", device.Id, byteCount);
             var layout = await PartitionTableParser.ParseAsync(source, device.Size, device.LogicalSectorSize, cancellationToken).ConfigureAwait(false);
             byteCount = Math.Min(byteCount, layout.LastAllocatedByte);
             source.Position = 0;
         }
 
+        ReportStage(progress, ImagingOperation.Read, "Checking free space…", device.Id, byteCount);
         EnsureFreeSpace(request.ImagePath, byteCount);
+        ReportStage(progress, ImagingOperation.Read, "Creating the image file…", device.Id, byteCount);
         await using var image = new FileStream(request.ImagePath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous);
+        ReportStage(progress, ImagingOperation.Read, "Reading device data…", device.Id, byteCount);
         var engine = new ImagingEngine();
         var result = await engine.CopyToDevicesAsync(
             source,
@@ -351,6 +358,14 @@ internal static class PrivilegedHelperServer
             writeLock.Release();
         }
     }
+
+    private static void ReportStage(
+        IProgress<ImagingProgress> progress,
+        ImagingOperation operation,
+        string stage,
+        string? deviceId = null,
+        long totalBytes = 0) =>
+        progress.Report(new ImagingProgress(operation, 0, totalBytes, 0, null, stage, deviceId));
 
     private sealed class InlineProgress<T>(Action<T> callback) : IProgress<T>
     {

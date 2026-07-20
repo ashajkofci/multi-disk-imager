@@ -51,7 +51,10 @@
                 <TextBlock Text="{loc:Tr Devices}" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" />
                 <ProgressBar Width="64" Height="4" IsIndeterminate="True" IsVisible="{Binding IsRefreshing}" />
               </StackPanel>
-              <Button Grid.Column="1" Content="{loc:Tr Refresh}" Click="OnRefresh" IsEnabled="{Binding IsIdle}" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="{loc:Tr SelectAll}" Click="OnSelectAll" IsEnabled="{Binding IsIdle}" />
+                <Button Content="{loc:Tr Refresh}" Click="OnRefresh" IsEnabled="{Binding IsIdle}" />
+              </StackPanel>
             </Grid>
             <ItemsControl Grid.Row="1" ItemsSource="{Binding Devices}">
               <ItemsControl.ItemTemplate>
@@ -105,7 +108,7 @@
             <ItemsControl ItemsSource="{Binding DeviceProgress}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:DeviceProgressViewModel">
-                  <Grid ColumnDefinitions="145,105,*,110" ColumnSpacing="8" Margin="0,2">
+                  <Grid ColumnDefinitions="145,105,*,190" ColumnSpacing="8" Margin="0,2">
                     <TextBlock Text="{Binding DeviceId}" TextTrimming="CharacterEllipsis" />
                     <TextBlock Grid.Column="1" Text="{Binding OperationName}" TextTrimming="CharacterEllipsis" Opacity="0.75" />
                     <ProgressBar Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Percentage}" Height="8" VerticalAlignment="Center" />

@@ -9,10 +9,21 @@ internal sealed class MacRawDeviceAccess : IRawDeviceAccess
 {
     public async Task PrepareAsync(DeviceDescriptor device, bool writing, CancellationToken cancellationToken)
     {
-        var result = await ProcessRunner.RunAsync(
-            "/usr/sbin/diskutil",
-            ["unmountDisk", "force", $"/dev/{device.Id}"],
-            cancellationToken).ConfigureAwait(false);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        ProcessResult result;
+        try
+        {
+            result = await ProcessRunner.RunAsync(
+                "/usr/sbin/diskutil",
+                ["unmountDisk", "force", $"/dev/{device.Id}"],
+                timeout.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new IOException($"Timed out while preparing {device.Id}. Close applications using the disk, reconnect it, and try again.");
+        }
+
         result.EnsureSuccess($"Unmounting {device.Id}");
     }
 
@@ -40,4 +51,3 @@ internal sealed class MacRawDeviceAccess : IRawDeviceAccess
         }
     }
 }
-

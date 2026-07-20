@@ -163,6 +163,19 @@ internal sealed class MainWindowViewModel : ObservableObject
     public bool AutoStartRequested => _startupOptions.AutoStart;
     public IReadOnlyList<DeviceDescriptor> SelectedDevices => Devices.Where(item => item.IsSelected).Select(item => item.Device).ToArray();
 
+    public void SelectAllDevices()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        foreach (var device in Devices)
+        {
+            device.IsSelected = true;
+        }
+    }
+
     public async Task InitializeAsync()
     {
         await RefreshDevicesAsync();
@@ -410,8 +423,10 @@ internal sealed class MainWindowViewModel : ObservableObject
         Progress = _overallFraction * 100;
         var remaining = overallRemaining > TimeSpan.Zero ? $" • {overallRemaining:hh\\:mm\\:ss} {Localizer.Get("RemainingLabel")}" : string.Empty;
         var operationName = OperationName(value.Operation);
-        var overallStage = _overallFraction >= 1 ? $"{operationName} — {Localizer.Get("CompleteStage")}" : operationName;
-        ProgressText = $"{overallStage} • {_overallFraction:P0} • {ByteSize.Format(overallBytes)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)totalSpeed)}/s{remaining}";
+        var overallStage = _overallFraction >= 1 ? $"{operationName} — {Localizer.Get("CompleteStage")}" : value.Stage;
+        ProgressText = value.TotalBytes <= 0
+            ? overallStage
+            : $"{overallStage} • {_overallFraction:P0} • {ByteSize.Format(overallBytes)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)totalSpeed)}/s{remaining}";
 
         var updated = SpeedSeries.ToDictionary(pair => pair.Key, pair => pair.Value.ToList(), StringComparer.Ordinal);
         foreach (var deviceId in targetIds)
@@ -424,7 +439,9 @@ internal sealed class MainWindowViewModel : ObservableObject
             }
             item.OperationName = operationName;
             item.Percentage = value.Fraction * 100;
-            item.Details = $"{value.Fraction:P0} • {ByteSize.Format((long)value.BytesPerSecond)}/s";
+            item.Details = value.BytesProcessed == 0 && value.BytesPerSecond == 0 && value.Stage != "Complete"
+                ? value.Stage
+                : $"{value.Fraction:P0} • {ByteSize.Format((long)value.BytesPerSecond)}/s";
 
             var samples = updated.TryGetValue(deviceId, out var existing) ? existing : [];
             samples.Add(value.Fraction < 1 ? value.BytesPerSecond : 0);
