@@ -69,7 +69,7 @@ jobs:
           -p:Version=${{ needs.validate.outputs.version }}
           -p:InformationalVersion=${{ needs.validate.outputs.version }}
           -p:Repository=${{ github.repository }}
-          -p:PublishDir=${{ github.workspace }}/publish/
+          --output publish
       - name: Package Windows
         if: matrix.platform == 'windows'
         shell: pwsh
