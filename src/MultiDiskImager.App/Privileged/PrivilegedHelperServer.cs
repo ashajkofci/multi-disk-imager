@@ -12,6 +12,33 @@ internal static class PrivilegedHelperServer
 
     public static async Task<int> RunAsync(string pipeName)
     {
+        try
+        {
+            return await RunCoreAsync(pipeName).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return 0;
+        }
+        catch (IOException)
+        {
+            // The UI process can close the pipe while the elevated helper is
+            // shutting down. This is a normal disconnect, not an AppleScript error.
+            return 0;
+        }
+        catch (ObjectDisposedException)
+        {
+            return 0;
+        }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine(exception.Message);
+            return 1;
+        }
+    }
+
+    private static async Task<int> RunCoreAsync(string pipeName)
+    {
         if (OperatingSystem.IsLinux() && !LinuxPrivilege.IsRoot)
         {
             Console.Error.WriteLine("The Linux raw-device helper must run as root through PolicyKit.");
@@ -46,11 +73,15 @@ internal static class PrivilegedHelperServer
                 {
                     cancellation.Cancel();
                 }
+                catch (ObjectDisposedException)
+                {
+                    cancellation.Cancel();
+                }
             });
 
             var result = await ExecuteAsync(request, progress, cancellation.Token).ConfigureAwait(false);
             await WriteEventAsync(writer, writeLock, new HelperEvent("result", Result: result), CancellationToken.None).ConfigureAwait(false);
-            return result.Success ? 0 : result.Canceled ? 3 : 1;
+            return 0;
         }
         catch (OperationCanceledException)
         {
@@ -59,12 +90,12 @@ internal static class PrivilegedHelperServer
                 true,
                 request.Devices.Select(device => new DeviceOperationResult(device.Id, false, 0, "Canceled")).ToArray());
             await WriteEventAsync(writer, writeLock, new HelperEvent("result", Result: result), CancellationToken.None).ConfigureAwait(false);
-            return 3;
+            return 0;
         }
         catch (Exception exception)
         {
             await WriteEventAsync(writer, writeLock, new HelperEvent("error", Message: exception.Message), CancellationToken.None).ConfigureAwait(false);
-            return 1;
+            return 0;
         }
         finally
         {
@@ -74,6 +105,12 @@ internal static class PrivilegedHelperServer
                 await cancelMonitor.ConfigureAwait(false);
             }
             catch (OperationCanceledException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            catch (ObjectDisposedException)
             {
             }
         }
