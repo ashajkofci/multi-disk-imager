@@ -1,5 +1,7 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading.Channels;
 
 namespace MultiDiskImager.Core;
 
@@ -41,80 +43,100 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
         }
 
         var chunkSize = Math.Max(sectorSize, _bufferSize - (_bufferSize % sectorSize));
-        var buffer = ArrayPool<byte>.Shared.Rent(chunkSize);
-        var active = destinations.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-        var results = new Dictionary<string, DeviceOperationResult>(StringComparer.Ordinal);
-        var stopwatch = Stopwatch.StartNew();
-        var lastReport = TimeSpan.Zero;
-        long processed = 0;
+        var results = new ConcurrentDictionary<string, DeviceOperationResult>(StringComparer.Ordinal);
+        var channels = destinations.ToDictionary(
+            pair => pair.Key,
+            _ => Channel.CreateBounded<WriteChunk>(new BoundedChannelOptions(4)
+            {
+                SingleReader = true,
+                SingleWriter = true,
+                FullMode = BoundedChannelFullMode.Wait
+            }),
+            StringComparer.Ordinal);
+        var workers = destinations.Select(pair => WriteDeviceAsync(pair.Key, pair.Value, channels[pair.Key], byteCount, operation, progress, results, cancellationToken)).ToArray();
+        long sourceBytes = 0;
 
         try
         {
-            while (processed < byteCount && active.Count > 0)
+            while (sourceBytes < byteCount && channels.Values.Any(channel => !channel.Reader.Completion.IsCompleted))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var requested = (int)Math.Min(chunkSize, byteCount - processed);
+                var requested = (int)Math.Min(chunkSize, byteCount - sourceBytes);
+                var finalChunk = sourceBytes + requested >= byteCount;
+                var writeLength = finalChunk ? AlignUp(requested, sectorSize) : requested;
+                var buffer = new byte[writeLength];
                 var read = await ReadExactlyUpToAsync(source, buffer.AsMemory(0, requested), cancellationToken).ConfigureAwait(false);
                 if (read == 0)
                 {
-                    throw new EndOfStreamException($"Source ended after {processed} of {byteCount} bytes.");
+                    throw new EndOfStreamException($"Source ended after {sourceBytes} of {byteCount} bytes.");
                 }
 
-                var finalChunk = processed + read >= byteCount;
-                var writeLength = finalChunk ? AlignUp(read, sectorSize) : read;
-                if (writeLength > read)
+                var chunk = new WriteChunk(buffer, finalChunk ? AlignUp(read, sectorSize) : read, read);
+                foreach (var channel in channels.Values)
                 {
-                    buffer.AsSpan(read, writeLength - read).Clear();
-                }
-
-                var writes = active.Select(pair => WriteOneAsync(pair.Key, pair.Value, buffer.AsMemory(0, writeLength), cancellationToken)).ToArray();
-                var writeResults = await Task.WhenAll(writes).ConfigureAwait(false);
-                foreach (var writeResult in writeResults.Where(result => result.Error is not null))
-                {
-                    active.Remove(writeResult.DeviceId);
-                    results[writeResult.DeviceId] = new DeviceOperationResult(writeResult.DeviceId, false, processed, writeResult.Error!.Message);
-                }
-
-                processed += read;
-                if (progress is not null && (stopwatch.Elapsed - lastReport >= TimeSpan.FromMilliseconds(200) || processed >= byteCount))
-                {
-                    lastReport = stopwatch.Elapsed;
-                    foreach (var writeResult in writeResults.Where(result => result.Error is null))
+                    try
                     {
-                        TimeSpan? remaining = writeResult.BytesPerSecond <= 0 ? null : TimeSpan.FromSeconds((byteCount - processed) / writeResult.BytesPerSecond);
-                        progress.Report(new ImagingProgress(operation, processed, byteCount, writeResult.BytesPerSecond, remaining, "Transferring", writeResult.DeviceId));
+                        await channel.Writer.WriteAsync(chunk, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ChannelClosedException)
+                    {
                     }
                 }
+                sourceBytes += read;
             }
 
-            foreach (var pair in active)
-            {
-                try
-                {
-                    await pair.Value.FlushAsync(cancellationToken).ConfigureAwait(false);
-                    results[pair.Key] = new DeviceOperationResult(pair.Key, true, processed);
-                }
-                catch (Exception exception) when (exception is not OperationCanceledException)
-                {
-                    results[pair.Key] = new DeviceOperationResult(pair.Key, false, processed, exception.Message);
-                }
-            }
-
-            progress?.Report(CreateProgress(operation, processed, byteCount, "Complete", stopwatch));
+            foreach (var channel in channels.Values) channel.Writer.TryComplete();
+            await Task.WhenAll(workers).ConfigureAwait(false);
             return new ImagingJobResult(operation, false, destinations.Keys.Select(id => results[id]).ToArray());
         }
         catch (OperationCanceledException)
         {
-            foreach (var id in active.Keys)
-            {
-                results.TryAdd(id, new DeviceOperationResult(id, false, processed, "Canceled"));
-            }
-
+            foreach (var channel in channels.Values) channel.Writer.TryComplete();
+            await Task.WhenAll(workers).ConfigureAwait(false);
+            foreach (var id in destinations.Keys) results.TryAdd(id, new DeviceOperationResult(id, false, 0, "Canceled"));
             return new ImagingJobResult(operation, true, destinations.Keys.Select(id => results[id]).ToArray());
         }
-        finally
+        catch (Exception exception)
         {
-            ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
+            foreach (var channel in channels.Values) channel.Writer.TryComplete(exception);
+            await Task.WhenAll(workers).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    private sealed record WriteChunk(byte[] Buffer, int WriteLength, int SourceLength);
+
+    private static async Task WriteDeviceAsync(string id, Stream stream, Channel<WriteChunk> channel, long total, ImagingOperation operation,
+        IProgress<ImagingProgress>? progress, ConcurrentDictionary<string, DeviceOperationResult> results, CancellationToken cancellationToken)
+    {
+        long processed = 0;
+        var stopwatch = Stopwatch.StartNew();
+        var lastReport = TimeSpan.Zero;
+        try
+        {
+            await foreach (var chunk in channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+            {
+                await stream.WriteAsync(chunk.Buffer.AsMemory(0, chunk.WriteLength), cancellationToken).ConfigureAwait(false);
+                processed += chunk.SourceLength;
+                if (progress is not null && (stopwatch.Elapsed - lastReport >= TimeSpan.FromMilliseconds(200) || processed >= total))
+                {
+                    lastReport = stopwatch.Elapsed;
+                    var speed = stopwatch.Elapsed.TotalSeconds <= 0 ? 0 : processed / stopwatch.Elapsed.TotalSeconds;
+                    var remaining = speed <= 0 ? (TimeSpan?)null : TimeSpan.FromSeconds((total - processed) / speed);
+                    progress.Report(new ImagingProgress(operation, processed, total, speed, remaining, processed >= total ? "Complete" : "Transferring", id));
+                }
+            }
+            await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+            results[id] = new DeviceOperationResult(id, true, processed);
+        }
+        catch (OperationCanceledException)
+        {
+            results[id] = new DeviceOperationResult(id, false, processed, "Canceled");
+        }
+        catch (Exception exception)
+        {
+            results[id] = new DeviceOperationResult(id, false, processed, exception.Message);
+            channel.Writer.TryComplete();
         }
     }
 

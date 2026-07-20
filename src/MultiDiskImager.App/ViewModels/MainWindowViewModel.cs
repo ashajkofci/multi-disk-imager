@@ -161,7 +161,7 @@ internal sealed class MainWindowViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
-        await RefreshDevicesAsync().ConfigureAwait(false);
+        await RefreshDevicesAsync();
         SelectStartupDevices();
         if (_settings.CheckForUpdatesOnStartup)
         {
@@ -181,7 +181,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         var selected = Devices.Where(item => item.IsSelected).Select(item => item.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         try
         {
-            var devices = await _catalog.GetDevicesAsync().ConfigureAwait(false);
+            var devices = await _catalog.GetDevicesAsync();
             var threshold = _settings.OmitDrivesThresholdGiB * 1024 * 1024 * 1024;
             var visible = devices.Where(device => !device.IsSystem)
                 .Where(device => device.IsRemovable || _settings.ShowExternalHardDrives && device.IsExternal)
@@ -233,7 +233,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         {
             var progress = new Progress<ImagingProgress>(UpdateProgress);
             var request = new HelperRequest(operation, ImagePath, selected, VerifyAfter, OnlyAllocated, allowCrop, byteCount);
-            var result = await PrivilegedHelperClient.RunAsync(request, progress, _operationCancellation.Token).ConfigureAwait(false);
+            var result = await PrivilegedHelperClient.RunAsync(request, progress, _operationCancellation.Token);
             Status = result.Canceled
                 ? "Operation canceled; the target may contain incomplete data"
                 : result.Success
@@ -280,7 +280,7 @@ internal sealed class MainWindowViewModel : ObservableObject
                 Progress = value * 100;
                 ProgressText = $"Checksum {value:P0}";
             });
-            Checksum = await ChecksumService.ComputeAsync(stream, ChecksumAlgorithm, progress, _operationCancellation.Token).ConfigureAwait(false);
+            Checksum = await ChecksumService.ComputeAsync(stream, ChecksumAlgorithm, progress, _operationCancellation.Token);
             Status = $"{ChecksumAlgorithm} checksum calculated";
         }
         finally
@@ -294,7 +294,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     public async Task<bool> TailContainsDataAsync(long deviceSize)
     {
         await using var image = new FileStream(ImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-        return await new ImagingEngine().TailContainsNonZeroAsync(image, deviceSize).ConfigureAwait(false);
+        return await new ImagingEngine().TailContainsNonZeroAsync(image, deviceSize);
     }
 
     public async Task ApplySettingsAsync(AppSettings settings)
@@ -302,7 +302,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         _settings = settings;
         RaisePropertyChanged(nameof(Settings));
         RaisePropertyChanged(nameof(WindowTitle));
-        await _settingsStore.SaveAsync(settings).ConfigureAwait(false);
+        await _settingsStore.SaveAsync(settings);
         if (Application.Current is { } application)
         {
             application.RequestedThemeVariant = settings.Theme switch
@@ -313,7 +313,7 @@ internal sealed class MainWindowViewModel : ObservableObject
             };
         }
 
-        await RefreshDevicesAsync().ConfigureAwait(false);
+        await RefreshDevicesAsync();
     }
 
     public async Task RememberImageFolderAsync(string imagePath)
@@ -326,7 +326,7 @@ internal sealed class MainWindowViewModel : ObservableObject
 
         _settings = _settings with { LastFolderPath = folder };
         RaisePropertyChanged(nameof(Settings));
-        await _settingsStore.SaveAsync(_settings).ConfigureAwait(false);
+        await _settingsStore.SaveAsync(_settings);
     }
 
     public async Task CheckForUpdatesAsync()
@@ -334,7 +334,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         try
         {
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            AvailableUpdate = await new UpdateService(httpClient).CheckAsync().ConfigureAwait(false);
+            AvailableUpdate = await new UpdateService(httpClient).CheckAsync();
         }
         catch (HttpRequestException)
         {
@@ -354,6 +354,12 @@ internal sealed class MainWindowViewModel : ObservableObject
 
     private void UpdateProgress(ImagingProgress value)
     {
+        if (!Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateProgress(value));
+            return;
+        }
+
         _lastProgress = value;
         RaisePropertyChanged(nameof(WindowTitle));
         Progress = value.Fraction * 100;
