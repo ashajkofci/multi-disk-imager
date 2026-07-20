@@ -122,7 +122,7 @@ internal static class PrivilegedHelperServer
         CancellationToken cancellationToken)
     {
         ReportStage(progress, request.Operation, "Checking selected devices…");
-        var catalog = PlatformServices.CreateCatalog();
+        var catalog = PlatformServices.CreateCatalog(request.MetadataUserId);
         var rawAccess = PlatformServices.CreateRawAccess();
         var devices = await ValidateDevicesAsync(catalog, request.Devices, cancellationToken).ConfigureAwait(false);
         var prepared = new List<DeviceDescriptor>();

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using MultiDiskImager.Core;
@@ -15,6 +16,14 @@ internal static class PrivilegedHelperClient
         IProgress<ImagingProgress>? progress,
         CancellationToken cancellationToken)
     {
+        if (OperatingSystem.IsMacOS())
+        {
+            // diskutil can block when invoked in osascript's root login
+            // context. The helper still performs destructive access as root,
+            // but metadata queries should use the signed-in user's context.
+            request = request with { MetadataUserId = GetUserId() };
+        }
+
         var pipeName = CreatePipeName();
         await using var pipe = new NamedPipeServerStream(
             pipeName,
@@ -147,6 +156,11 @@ internal static class PrivilegedHelperClient
         var identifier = $"mdi-{Environment.ProcessId:x}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant()}";
         return OperatingSystem.IsWindows() ? identifier : $"/tmp/{identifier}";
     }
+
+    [DllImport("libc")]
+    private static extern uint getuid();
+
+    private static uint GetUserId() => getuid();
 
     private static string ShellQuote(string value) => $"'{value.Replace("'", "'\\''", StringComparison.Ordinal)}'";
 }

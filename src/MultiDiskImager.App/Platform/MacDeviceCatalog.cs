@@ -9,7 +9,10 @@ namespace MultiDiskImager.Platform;
 internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
 {
     private static readonly TimeSpan DiskUtilTimeout = TimeSpan.FromSeconds(15);
+    private readonly uint? _metadataUserId;
     private IReadOnlySet<string>? _systemDiskIds;
+
+    public MacDeviceCatalog(uint? metadataUserId = null) => _metadataUserId = metadataUserId;
 
     public async Task<IReadOnlyList<DeviceDescriptor>> GetDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -136,7 +139,7 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
             mountPoints);
     }
 
-    private static async Task<ProcessResult> RunDiskUtilAsync(
+    private async Task<ProcessResult> RunDiskUtilAsync(
         IEnumerable<string> arguments,
         string operation,
         CancellationToken cancellationToken)
@@ -145,6 +148,16 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
         timeout.CancelAfter(DiskUtilTimeout);
         try
         {
+            if (_metadataUserId is > 0)
+            {
+                var userArguments = new[]
+                    {
+                        "-n", "-u", $"#{_metadataUserId.Value}", "--", "/usr/sbin/diskutil"
+                    }
+                    .Concat(arguments);
+                return await ProcessRunner.RunAsync("/usr/bin/sudo", userArguments, timeout.Token).ConfigureAwait(false);
+            }
+
             return await ProcessRunner.RunAsync("/usr/sbin/diskutil", arguments, timeout.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
