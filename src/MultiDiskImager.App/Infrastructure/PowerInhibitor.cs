@@ -58,9 +58,13 @@ internal sealed class PlatformPowerInhibitor : IPowerInhibitor
             _ = SetThreadExecutionState(0x80000000);
         }
 
-        if (_caffeinate is { HasExited: false })
+        if (_caffeinate is not null)
         {
-            _caffeinate.Kill(entireProcessTree: true);
+            if (!_caffeinate.HasExited)
+            {
+                _caffeinate.Kill(entireProcessTree: true);
+            }
+
             _caffeinate.Dispose();
         }
 

@@ -106,14 +106,25 @@ internal static class PlatformPartitionInspector
     [SupportedOSPlatform("linux")]
     private static long ReadLinuxPartitionStart(JsonElement partition)
     {
-        var name = Path.GetFileName(LinuxDeviceCatalog.String(partition, "path"));
-        var startPath = Path.Combine("/sys/class/block", name, "start");
-        return File.Exists(startPath) && long.TryParse(
-            File.ReadAllText(startPath).Trim(),
-            System.Globalization.NumberStyles.Integer,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out var sectors)
-            ? checked(sectors * 512)
-            : 0;
+        try
+        {
+            var name = Path.GetFileName(LinuxDeviceCatalog.String(partition, "path"));
+            var startPath = Path.Combine("/sys/class/block", name, "start");
+            return File.Exists(startPath) && long.TryParse(
+                File.ReadAllText(startPath).Trim(),
+                System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var sectors)
+                ? checked(sectors * 512)
+                : 0;
+        }
+        catch (IOException)
+        {
+            return 0;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return 0;
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.Versioning;
 using System.Text.Json;
 using MultiDiskImager.Core;
@@ -113,7 +114,7 @@ internal sealed class LinuxRawDeviceAccess : IRawDeviceAccess
         {
             _ = await ProcessRunner.RunAsync(fileName, arguments, cancellationToken).ConfigureAwait(false);
         }
-        catch (IOException)
+        catch (Exception exception) when (exception is IOException or Win32Exception)
         {
         }
     }

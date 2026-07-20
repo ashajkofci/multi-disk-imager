@@ -45,7 +45,8 @@ internal sealed class LinuxDeviceCatalog : IBlockDeviceCatalog
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
             var transport = String(device, "tran");
-            var removable = Boolean(device, "rm");
+            var removable = Boolean(device, "rm") || transport.Equals("mmc", StringComparison.OrdinalIgnoreCase) ||
+                transport.Equals("sdio", StringComparison.OrdinalIgnoreCase);
             var hotPlug = Boolean(device, "hotplug");
             var external = removable || hotPlug ||
                 new[] { "usb", "firewire", "thunderbolt", "mmc", "sdio" }.Contains(transport, StringComparer.OrdinalIgnoreCase);

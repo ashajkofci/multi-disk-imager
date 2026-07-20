@@ -25,3 +25,16 @@ jobs:
       - run: dotnet restore MultiDiskImager.sln --locked-mode -m:1
       - run: dotnet build MultiDiskImager.sln --configuration Release --no-restore -m:1
       - run: dotnet test tests/MultiDiskImager.Core.Tests/MultiDiskImager.Core.Tests.csproj --configuration Release --no-build
+      - name: Publish Linux x64 single-file build
+        if: matrix.os == 'ubuntu-latest'
+        run: >-
+          dotnet publish src/MultiDiskImager.App/MultiDiskImager.App.csproj
+          --configuration Release --runtime linux-x64 --self-contained true --no-restore
+          -p:Version=0.0.0 -p:InformationalVersion=0.0.0-ci
+          -p:PublishDir=${{ github.workspace }}/ci-publish/
+      - name: Smoke-test and package Linux build
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          DOTNET_BUNDLE_EXTRACT_BASE_DIR="$RUNNER_TEMP/multi-disk-imager" ./ci-publish/MultiDiskImager --version
+          bash scripts/package-linux.sh ci-publish 0.0.0 x64 ci-artifacts
