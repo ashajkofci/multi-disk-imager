@@ -95,11 +95,29 @@ jobs:
               throw 'MakeAppx was not found on the Windows runner.'
             }
 
-            $executable = (Resolve-Path 'publish/MultiDiskImager.exe').Path
+            $iscc = @(
+              "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+              "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+            ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if ($null -eq $iscc) {
+              throw 'Inno Setup Compiler was not found on the Windows runner.'
+            }
 
-            New-Item -ItemType Directory -Force artifacts | Out-Null
+            $executable = (Resolve-Path 'publish/MultiDiskImager.exe').Path
+            $artifactDirectory = (New-Item -ItemType Directory -Force artifacts).FullName
+            $installerIcon = (Resolve-Path 'src/MultiDiskImager.App/Assets/AppIcon.ico').Path
+
             $portableExecutable = "artifacts/bnovate-multi-disk-imager-${{ needs.validate.outputs.version }}-windows-x64.exe"
             Copy-Item $executable $portableExecutable
+
+            & $iscc "/DAppVersion=${{ needs.validate.outputs.version }}" "/DNumericVersion=${{ needs.validate.outputs.msix_version }}" "/DSourceExe=$executable" "/DOutputDir=$artifactDirectory" "/DIconFile=$installerIcon" packaging/windows/installer.iss
+            if ($LASTEXITCODE -ne 0) {
+              throw "Inno Setup failed with exit code $LASTEXITCODE."
+            }
+            $installer = Join-Path $artifactDirectory "bnovate-multi-disk-imager-${{ needs.validate.outputs.version }}-windows-x64-setup.exe"
+            if (-not (Test-Path $installer)) {
+              throw "Inno Setup did not create the expected installer: $installer"
+            }
 
             New-Item -ItemType Directory -Force (Join-Path $packageRoot 'Assets') | Out-Null
             Copy-Item $executable (Join-Path $packageRoot 'MultiDiskImager.exe')

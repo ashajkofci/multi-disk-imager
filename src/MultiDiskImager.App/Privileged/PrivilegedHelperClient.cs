@@ -15,7 +15,7 @@ internal static class PrivilegedHelperClient
         IProgress<ImagingProgress>? progress,
         CancellationToken cancellationToken)
     {
-        var pipeName = $"multi-disk-imager-{Environment.ProcessId}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant()}";
+        var pipeName = CreatePipeName();
         await using var pipe = new NamedPipeServerStream(
             pipeName,
             PipeDirection.InOut,
@@ -140,6 +140,12 @@ internal static class PrivilegedHelperClient
         }
 
         return Process.Start(startInfo) ?? throw new IOException("Unable to start the privileged helper.");
+    }
+
+    private static string CreatePipeName()
+    {
+        var identifier = $"mdi-{Environment.ProcessId:x}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant()}";
+        return OperatingSystem.IsWindows() ? identifier : $"/tmp/{identifier}";
     }
 
     private static string ShellQuote(string value) => $"'{value.Replace("'", "'\\''", StringComparison.Ordinal)}'";

@@ -26,7 +26,7 @@ The system disk is never offered as a target. Writes and wipes require administr
 
 SemVer releases publish self-contained builds for:
 
-- Windows 10+ x64: an unsigned portable `.exe` and unsigned `.msix` package.
+- Windows 10+ x64: an unsigned Setup `.exe`, portable `.exe`, and `.msix` package.
 - macOS 12+ Intel: a zipped `.app`.
 - macOS 12+ Apple Silicon: a zipped `.app`.
 - Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
@@ -34,7 +34,7 @@ SemVer releases publish self-contained builds for:
 
 The release artifacts do not use commercial signing identities. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. The macOS app has an ad-hoc signature so both Intel and Apple Silicon bundles are structurally valid. Move it to Applications, Control-click it in Finder, and choose **Open**. If macOS still blocks it, open **System Settings → Privacy & Security** and choose **Open Anyway** for the app. Administrator approval is requested only when raw-device access begins.
 
-On Windows, use the portable `.exe` directly. The pipeline also produces an unsigned `.msix` for enterprise or downstream distribution workflows; Windows requires that package to be signed before normal App Installer installation. Both contain the .NET runtime and native dependencies.
+On Windows, the Setup `.exe` is the easiest option: it installs the app under Program Files and creates Start Menu and uninstall entries, with an optional desktop shortcut. The portable `.exe` runs without installation. The pipeline also produces an unsigned `.msix` for enterprise or downstream distribution workflows; Windows requires that package to be signed before normal App Installer installation. All variants contain the .NET runtime and native dependencies.
 
 On Ubuntu, extract the archive and run `./MultiDiskImager`. The executable contains the .NET runtime and application dependencies. Raw-device operations use the desktop's PolicyKit prompt through `pkexec`; the `policykit-1` and standard `util-linux` tools must be installed.
 
@@ -69,9 +69,9 @@ dotnet test MultiDiskImager.sln -c Release --no-build
 
 Create a release by pushing an annotated or lightweight SemVer tag such as `v1.2.3`. GitHub Actions validates the tag, builds every platform artifact, creates `SHA256SUMS.txt` and `release-manifest.json`, and attaches them to the GitHub Release.
 
-### Windows MSIX setup
+### Windows packaging
 
-The Windows job uses the SDK's MakeAppx tool to create an unsigned MSIX. No signing certificate or GitHub secret is required.
+The Windows job uses Inno Setup to create the Setup executable and the SDK's MakeAppx tool to create an unsigned MSIX. No signing certificate or GitHub secret is required.
 
 The manifest uses the Partner Center identity `bNovateTechnologiesSA.bNovateMultiDiskImager` and publisher `CN=AFC41234-54C7-478C-B9B2-37E1553475F1`. Windows derives the package family name `bNovateTechnologiesSA.bNovateMultiDiskImager_wn2prwzkpdthy` from those values. The package declares `runFullTrust` and `allowElevation` because raw-device operations use an administrator helper; Microsoft Store submission of `allowElevation` requires approval.
 
