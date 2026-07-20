@@ -4,7 +4,7 @@ using System.Runtime.Versioning;
 
 namespace MultiDiskImager.Services;
 
-internal static partial class NotificationService
+internal static class NotificationService
 {
     public static void Notify()
     {
@@ -31,7 +31,7 @@ internal static partial class NotificationService
     }
 
     [SupportedOSPlatform("windows")]
-    [LibraryImport("user32.dll")]
+    [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool MessageBeep(uint type);
+    private static extern bool MessageBeep(uint type);
 }
