@@ -1,66 +1,68 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:MultiDiskImager.Localization"
         x:Class="MultiDiskImager.Views.SettingsWindow"
         Width="560" Height="760" CanResize="False"
+        Icon="/Assets/AppIcon.png"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
-        Title="Settings">
+        Title="{loc:Tr Settings}">
   <Grid RowDefinitions="*,Auto" Margin="20" RowSpacing="16">
     <ScrollViewer>
       <StackPanel Spacing="14">
-        <TextBlock Text="General" FontSize="20" FontWeight="SemiBold" />
-        <CheckBox x:Name="WriteWarnings" Content="Display warnings before write and wipe" />
-        <CheckBox x:Name="Animations" Content="Enable animations" />
-        <CheckBox x:Name="UpdateChecks" Content="Check GitHub Releases for updates on startup" />
-        <CheckBox x:Name="SoundNotification" Content="Play a notification sound when finished" />
-        <CheckBox x:Name="AutoSelect" Content="Automatically select a single eligible device" />
-        <CheckBox x:Name="AutoClose" Content="Close after a fully successful operation" />
-        <CheckBox x:Name="AlwaysOnTop" Content="Keep the main window on top" />
+        <TextBlock Text="{loc:Tr General}" FontSize="20" FontWeight="SemiBold" />
+        <CheckBox x:Name="WriteWarnings" Content="{loc:Tr WriteWarnings}" />
+        <CheckBox x:Name="Animations" Content="{loc:Tr Animations}" />
+        <CheckBox x:Name="UpdateChecks" Content="{loc:Tr UpdateChecks}" />
+        <CheckBox x:Name="SoundNotification" Content="{loc:Tr SoundNotification}" />
+        <CheckBox x:Name="AutoSelect" Content="{loc:Tr AutoSelect}" />
+        <CheckBox x:Name="AutoClose" Content="{loc:Tr AutoClose}" />
+        <CheckBox x:Name="AlwaysOnTop" Content="{loc:Tr AlwaysOnTop}" />
 
         <Separator />
-        <TextBlock Text="File picker" FontSize="20" FontWeight="SemiBold" />
-        <CheckBox x:Name="UseCustomFolder" Content="Start in a user-specified folder" />
+        <TextBlock Text="{loc:Tr FilePicker}" FontSize="20" FontWeight="SemiBold" />
+        <CheckBox x:Name="UseCustomFolder" Content="{loc:Tr UseCustomFolder}" />
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-          <TextBox x:Name="CustomFolder" PlaceholderText="Folder path" />
-          <Button Grid.Column="1" Content="Browse…" Click="OnBrowseFolder" />
+          <TextBox x:Name="CustomFolder" PlaceholderText="{loc:Tr FolderPath}" />
+          <Button Grid.Column="1" Content="{loc:Tr Browse}" Click="OnBrowseFolder" />
         </Grid>
-        <TextBlock Text="Custom places (one folder per line)" />
+        <TextBlock Text="{loc:Tr CustomPlaces}" />
         <TextBox x:Name="CustomPlaces" AcceptsReturn="True" Height="76" TextWrapping="NoWrap" />
 
         <Separator />
-        <TextBlock Text="Device safety filters" FontSize="20" FontWeight="SemiBold" />
-        <CheckBox x:Name="ShowExternalHardDrives" Content="Show external hard drives (system disk is always hidden)" />
+        <TextBlock Text="{loc:Tr DeviceFilters}" FontSize="20" FontWeight="SemiBold" />
+        <CheckBox x:Name="ShowExternalHardDrives" Content="{loc:Tr ShowExternal}" />
         <Grid ColumnDefinitions="Auto,100,Auto" ColumnSpacing="8">
-          <CheckBox x:Name="LimitSize" Content="Hide devices larger than" VerticalAlignment="Center" />
+          <CheckBox x:Name="LimitSize" Content="{loc:Tr HideLarger}" VerticalAlignment="Center" />
           <NumericUpDown Grid.Column="1" x:Name="LimitGiB" Minimum="1" Maximum="100000" Increment="1" FormatString="0" />
           <TextBlock Grid.Column="2" Text="GiB" VerticalAlignment="Center" />
         </Grid>
 
         <Separator />
-        <TextBlock Text="Appearance" FontSize="20" FontWeight="SemiBold" />
+        <TextBlock Text="{loc:Tr Appearance}" FontSize="20" FontWeight="SemiBold" />
         <Grid ColumnDefinitions="140,*" ColumnSpacing="8">
-          <TextBlock Text="Theme" VerticalAlignment="Center" />
+          <TextBlock Text="{loc:Tr Theme}" VerticalAlignment="Center" />
           <ComboBox Grid.Column="1" x:Name="ThemeChoice">
-            <ComboBoxItem Content="System" />
-            <ComboBoxItem Content="Light" />
-            <ComboBoxItem Content="Dark" />
+            <ComboBoxItem Content="{loc:Tr System}" />
+            <ComboBoxItem Content="{loc:Tr Light}" />
+            <ComboBoxItem Content="{loc:Tr Dark}" />
           </ComboBox>
         </Grid>
         <Grid ColumnDefinitions="140,*" ColumnSpacing="8">
-          <TextBlock Text="Title extra" VerticalAlignment="Center" />
+          <TextBlock Text="{loc:Tr TitleExtra}" VerticalAlignment="Center" />
           <ComboBox Grid.Column="1" x:Name="TitleExtra">
-            <ComboBoxItem Content="Nothing" />
-            <ComboBoxItem Content="Percent" />
-            <ComboBoxItem Content="Current speed" />
-            <ComboBoxItem Content="Remaining time" />
-            <ComboBoxItem Content="Active device" />
-            <ComboBoxItem Content="Image file name" />
+            <ComboBoxItem Content="{loc:Tr Nothing}" />
+            <ComboBoxItem Content="{loc:Tr Percent}" />
+            <ComboBoxItem Content="{loc:Tr CurrentSpeed}" />
+            <ComboBoxItem Content="{loc:Tr RemainingTime}" />
+            <ComboBoxItem Content="{loc:Tr ActiveDevice}" />
+            <ComboBoxItem Content="{loc:Tr ImageFileName}" />
           </ComboBox>
         </Grid>
       </StackPanel>
     </ScrollViewer>
     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button Content="Cancel" Click="OnCancel" />
-      <Button Classes="primary" Content="Save" Click="OnSave" />
+      <Button Content="{loc:Tr Cancel}" Click="OnCancel" />
+      <Button Classes="primary" Content="{loc:Tr Save}" Click="OnSave" />
     </StackPanel>
   </Grid>
 </Window>

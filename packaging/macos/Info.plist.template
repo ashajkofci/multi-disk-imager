@@ -3,14 +3,16 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key><string>en</string>
-  <key>CFBundleDisplayName</key><string>Multi Disk Imager</string>
+  <key>CFBundleDisplayName</key><string>bNovate Multi Disk Imager</string>
   <key>CFBundleExecutable</key><string>MultiDiskImager</string>
-  <key>CFBundleIdentifier</key><string>io.github.ashajkofci.multidiskimager</string>
+  <key>CFBundleIdentifier</key><string>com.bnovate.multidiskimager</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-  <key>CFBundleName</key><string>Multi Disk Imager</string>
+  <key>CFBundleName</key><string>bNovate Multi Disk Imager</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>__VERSION__</string>
   <key>CFBundleVersion</key><string>__VERSION__</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>NSHumanReadableCopyright</key><string>Copyright © 2026 bNovate Technologies SA. Author: Adrian Shajkofci.</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>

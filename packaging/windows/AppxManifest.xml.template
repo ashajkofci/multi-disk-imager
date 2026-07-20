@@ -10,9 +10,9 @@
     Version="__VERSION__"
     ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>Multi Disk Imager</DisplayName>
-    <PublisherDisplayName>__PUBLISHER_DISPLAY_NAME__</PublisherDisplayName>
-    <Description>Read, write, and verify raw disk images.</Description>
+    <DisplayName>bNovate Multi Disk Imager</DisplayName>
+    <PublisherDisplayName>bNovate Technologies SA</PublisherDisplayName>
+    <Description>Professional raw disk imaging by bNovate Technologies SA.</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Resources>
@@ -30,12 +30,12 @@
   </Capabilities>
   <Applications>
     <Application
-      Id="MultiDiskImager"
+      Id="bNovateMultiDiskImager"
       Executable="MultiDiskImager.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Multi Disk Imager"
-        Description="Read, write, and verify raw disk images."
+        DisplayName="bNovate Multi Disk Imager"
+        Description="Professional raw disk imaging by bNovate Technologies SA."
         BackgroundColor="#1D4ED8"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png" />

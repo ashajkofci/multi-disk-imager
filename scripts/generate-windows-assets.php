@@ -12,7 +12,7 @@ if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0777, true) && !is_dir
     throw new RuntimeException("Unable to create {$outputDirectory}.");
 }
 
-$sourceSize = 600;
+$sourceSize = 1024;
 $source = imagecreatetruecolor($sourceSize, $sourceSize);
 if ($source === false) {
     throw new RuntimeException('Unable to create the source logo image.');
@@ -45,17 +45,18 @@ $drawThickEllipse = static function (
     }
 };
 
-$left = 132;
-$right = 468;
-$topCenter = 204;
-$bottomCenter = 396;
-$ellipseHeight = 144;
-$stroke = 38;
+$left = (int) round($sourceSize * 0.22);
+$right = (int) round($sourceSize * 0.78);
+$topCenter = (int) round($sourceSize * 0.34);
+$bottomCenter = (int) round($sourceSize * 0.66);
+$ellipseHeight = (int) round($sourceSize * 0.24);
+$stroke = (int) round($sourceSize * 0.063);
 imagesetthickness($source, $stroke);
-$drawThickEllipse($source, 300, $topCenter, $right - $left, $ellipseHeight, $white, $stroke);
+$center = intdiv($sourceSize, 2);
+$drawThickEllipse($source, $center, $topCenter, $right - $left, $ellipseHeight, $white, $stroke);
 imageline($source, $left, $topCenter, $left, $bottomCenter, $white);
 imageline($source, $right, $topCenter, $right, $bottomCenter, $white);
-$drawThickEllipse($source, 300, $bottomCenter, $right - $left, $ellipseHeight, $white, $stroke);
+$drawThickEllipse($source, $center, $bottomCenter, $right - $left, $ellipseHeight, $white, $stroke);
 
 // GD lines have square caps; these circles keep the disk outline smooth after downsampling.
 $capDiameter = $stroke;
@@ -64,6 +65,7 @@ foreach ([[$left, $topCenter], [$left, $bottomCenter], [$right, $topCenter], [$r
 }
 
 $targets = [
+    dirname(__DIR__) . '/src/MultiDiskImager.App/Assets/AppIcon.png' => 1024,
     'StoreLogo.png' => 50,
     'Square44x44Logo.png' => 44,
     'Square150x150Logo.png' => 150,
@@ -75,7 +77,11 @@ foreach ($targets as $fileName => $size) {
         throw new RuntimeException("Unable to create {$fileName}.");
     }
     imagecopyresampled($target, $source, 0, 0, 0, 0, $size, $size, $sourceSize, $sourceSize);
-    $path = $outputDirectory . '/' . $fileName;
+    $path = str_contains($fileName, '/') ? $fileName : $outputDirectory . '/' . $fileName;
+    $targetDirectory = dirname($path);
+    if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0777, true) && !is_dir($targetDirectory)) {
+        throw new RuntimeException("Unable to create {$targetDirectory}.");
+    }
     if (!imagepng($target, $path, 9)) {
         throw new RuntimeException("Unable to write {$path}.");
     }

@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using MultiDiskImager.Core;
+using MultiDiskImager.Localization;
 using MultiDiskImager.ViewModels;
 
 namespace MultiDiskImager.Views;
@@ -177,10 +178,13 @@ internal sealed partial class MainWindow : Window
     private async void OnAbout(object? sender, RoutedEventArgs e)
     {
         await new MessageDialog(
-            "About Multi Disk Imager",
-            $"Multi Disk Imager {Services.UpdateService.CurrentVersionText}{Environment.NewLine}{Environment.NewLine}" +
-            "A cross-platform raw disk imaging utility. Images are byte-for-byte data without compression or encryption. Licensed under the MIT License.",
-            "Close",
+            Localizer.Get("AboutTitle"),
+            $"bNovate Multi Disk Imager {Services.UpdateService.CurrentVersionText}{Environment.NewLine}{Environment.NewLine}" +
+            $"Copyright © 2026 bNovate Technologies SA{Environment.NewLine}" +
+            $"{Localizer.Get("Author")}: Adrian Shajkofci{Environment.NewLine}" +
+            $"https://www.bnovate.com{Environment.NewLine}{Environment.NewLine}" +
+            Localizer.Get("AboutDescription"),
+            Localizer.Get("Close"),
             cancelVisible: false).ShowDialog<bool>(this);
     }
 

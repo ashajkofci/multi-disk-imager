@@ -18,7 +18,7 @@ internal sealed class UpdateService(HttpClient httpClient)
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repository}/releases/latest");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("MultiDiskImager", CurrentVersion.ToString()));
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("bNovateMultiDiskImager", CurrentVersion.ToString()));
         using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {

@@ -11,6 +11,7 @@ namespace MultiDiskImager.ViewModels;
 
 internal sealed class MainWindowViewModel : ObservableObject
 {
+    private const string ProductName = "bNovate Multi Disk Imager";
     private readonly SettingsStore _settingsStore;
     private readonly CommandLineOptions _startupOptions;
     private readonly IBlockDeviceCatalog _catalog = PlatformServices.CreateCatalog();
@@ -139,12 +140,12 @@ internal sealed class MainWindowViewModel : ObservableObject
     public bool HasAvailableUpdate => AvailableUpdate is not null;
     public string WindowTitle => _settings.TitleExtra switch
     {
-        TitleExtra.Percent when _lastProgress is not null => $"{_lastProgress.Fraction:P0} — Multi Disk Imager",
-        TitleExtra.CurrentSpeed when _lastProgress is not null => $"{ByteSize.Format((long)_lastProgress.BytesPerSecond)}/s — Multi Disk Imager",
-        TitleExtra.RemainingTime when _lastProgress?.Remaining is { } remaining => $"{remaining:hh\\:mm\\:ss} — Multi Disk Imager",
-        TitleExtra.ActiveDevice when SelectedDevices.FirstOrDefault() is { } device => $"{device.Id} — Multi Disk Imager",
-        TitleExtra.ImageFileName when !string.IsNullOrWhiteSpace(ImagePath) => $"{Path.GetFileName(ImagePath)} — Multi Disk Imager",
-        _ => "Multi Disk Imager"
+        TitleExtra.Percent when _lastProgress is not null => $"{_lastProgress.Fraction:P0} — {ProductName}",
+        TitleExtra.CurrentSpeed when _lastProgress is not null => $"{ByteSize.Format((long)_lastProgress.BytesPerSecond)}/s — {ProductName}",
+        TitleExtra.RemainingTime when _lastProgress?.Remaining is { } remaining => $"{remaining:hh\\:mm\\:ss} — {ProductName}",
+        TitleExtra.ActiveDevice when SelectedDevices.FirstOrDefault() is { } device => $"{device.Id} — {ProductName}",
+        TitleExtra.ImageFileName when !string.IsNullOrWhiteSpace(ImagePath) => $"{Path.GetFileName(ImagePath)} — {ProductName}",
+        _ => ProductName
     };
     public ImagingOperation? StartupOperation => _startupOptions.Read
         ? ImagingOperation.Read

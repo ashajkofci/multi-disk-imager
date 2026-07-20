@@ -1,7 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MultiDiskImager.App"
-             Name="Multi Disk Imager"
+             Name="bNovate Multi Disk Imager"
              RequestedThemeVariant="Default">
   <Application.Styles>
     <FluentTheme />
@@ -23,4 +23,3 @@
     </Style>
   </Application.Styles>
 </Application>
-

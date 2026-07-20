@@ -1,14 +1,15 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:MultiDiskImager.Localization"
         x:Class="MultiDiskImager.Views.MessageDialog"
         Width="480" SizeToContent="Height" CanResize="False"
+        Icon="/Assets/AppIcon.png"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
   <Grid RowDefinitions="*,Auto" Margin="20" RowSpacing="20">
     <TextBlock x:Name="MessageText" TextWrapping="Wrap" FontSize="15" MaxWidth="440" />
     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button x:Name="CancelButton" Content="Cancel" Click="OnCancel" />
-      <Button x:Name="ConfirmButton" Classes="primary" Content="Continue" Click="OnConfirm" />
+      <Button x:Name="CancelButton" Content="{loc:Tr Cancel}" Click="OnCancel" />
+      <Button x:Name="ConfirmButton" Classes="primary" Content="{loc:Tr Continue}" Click="OnConfirm" />
     </StackPanel>
   </Grid>
 </Window>
-
