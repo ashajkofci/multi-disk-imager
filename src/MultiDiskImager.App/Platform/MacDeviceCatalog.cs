@@ -13,7 +13,7 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
         var listResult = await ProcessRunner.RunAsync("/usr/sbin/diskutil", ["list", "-plist", "physical"], cancellationToken).ConfigureAwait(false);
         listResult.EnsureSuccess("Disk enumeration");
         var list = MacPlist.Parse(listResult.StandardOutput);
-        var systemId = await GetSystemDiskIdAsync(cancellationToken).ConfigureAwait(false);
+        var systemIds = await GetSystemDiskIdsAsync(cancellationToken).ConfigureAwait(false);
         var devices = new List<DeviceDescriptor>();
 
         foreach (var disk in list.DictionaryArray("AllDisksAndPartitions"))
@@ -58,7 +58,7 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
                 removable,
                 external,
                 !info.Boolean("Writable", fallback: true),
-                id.Equals(systemId, StringComparison.Ordinal),
+                systemIds.Contains(id),
                 mountPoints));
         }
 
@@ -68,16 +68,27 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
     public async Task<DeviceDescriptor?> GetDeviceAsync(string id, CancellationToken cancellationToken = default) =>
         (await GetDevicesAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault(device => device.Id.Equals(id, StringComparison.Ordinal));
 
-    private static async Task<string?> GetSystemDiskIdAsync(CancellationToken cancellationToken)
+    private static async Task<IReadOnlySet<string>> GetSystemDiskIdsAsync(CancellationToken cancellationToken)
     {
+        var systemIds = new HashSet<string>(StringComparer.Ordinal);
         var result = await ProcessRunner.RunAsync("/usr/sbin/diskutil", ["info", "-plist", "/"], cancellationToken).ConfigureAwait(false);
         if (result.ExitCode != 0)
         {
-            return null;
+            return systemIds;
         }
 
         var info = MacPlist.Parse(result.StandardOutput);
-        var identifier = info.String("ParentWholeDisk") ?? info.String("DeviceIdentifier");
-        return identifier is null ? null : Regex.Match(identifier, @"^disk\d+", RegexOptions.CultureInvariant).Value;
+        var identifiers = new[] { info.String("ParentWholeDisk"), info.String("DeviceIdentifier") }
+            .Concat(info.StringArray("APFSPhysicalStores"));
+        foreach (var identifier in identifiers.Where(value => !string.IsNullOrWhiteSpace(value)))
+        {
+            var wholeDisk = Regex.Match(identifier!, @"^disk\d+", RegexOptions.CultureInvariant).Value;
+            if (!string.IsNullOrWhiteSpace(wholeDisk))
+            {
+                systemIds.Add(wholeDisk);
+            }
+        }
+
+        return systemIds;
     }
 }

@@ -265,8 +265,10 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
             await device.WriteAsync(zeros.AsMemory(0, length), cancellationToken).ConfigureAwait(false);
             if (deviceSize > length)
             {
-                device.Position = Math.Max(length, deviceSize - length);
-                await device.WriteAsync(zeros.AsMemory(0, length), cancellationToken).ConfigureAwait(false);
+                var tailStart = Math.Max(length, deviceSize - length);
+                var tailLength = checked((int)Math.Min(length, deviceSize - tailStart));
+                device.Position = tailStart;
+                await device.WriteAsync(zeros.AsMemory(0, tailLength), cancellationToken).ConfigureAwait(false);
             }
 
             await device.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -351,4 +353,3 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
         return new ImagingProgress(operation, processed, total, speed, remaining, stage);
     }
 }
-

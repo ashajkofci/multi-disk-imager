@@ -46,6 +46,15 @@ internal static class PrivilegedHelperServer
             await WriteEventAsync(writer, writeLock, new HelperEvent("result", Result: result), CancellationToken.None).ConfigureAwait(false);
             return result.Success ? 0 : result.Canceled ? 3 : 1;
         }
+        catch (OperationCanceledException)
+        {
+            var result = new ImagingJobResult(
+                request.Operation,
+                true,
+                request.Devices.Select(device => new DeviceOperationResult(device.Id, false, 0, "Canceled")).ToArray());
+            await WriteEventAsync(writer, writeLock, new HelperEvent("result", Result: result), CancellationToken.None).ConfigureAwait(false);
+            return 3;
+        }
         catch (Exception exception)
         {
             await WriteEventAsync(writer, writeLock, new HelperEvent("error", Message: exception.Message), CancellationToken.None).ConfigureAwait(false);
@@ -154,7 +163,8 @@ internal static class PrivilegedHelperServer
         {
             image.Position = 0;
             source.Position = 0;
-            return await engine.VerifyDevicesAsync(image, new Dictionary<string, Stream> { [device.Id] = source }, byteCount, progress, cancellationToken).ConfigureAwait(false);
+            var verification = await engine.VerifyDevicesAsync(image, new Dictionary<string, Stream> { [device.Id] = source }, byteCount, progress, cancellationToken).ConfigureAwait(false);
+            return verification with { Operation = ImagingOperation.Read };
         }
 
         return result;
@@ -189,7 +199,14 @@ internal static class PrivilegedHelperServer
 
             var successful = streams.Where(pair => result.Devices.Any(device => device.DeviceId == pair.Key && device.Success))
                 .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-            return await engine.VerifyDevicesAsync(image, successful, byteCount, progress, cancellationToken).ConfigureAwait(false);
+            var verification = await engine.VerifyDevicesAsync(image, successful, byteCount, progress, cancellationToken).ConfigureAwait(false);
+            var byDevice = result.Devices.Where(device => !device.Success)
+                .Concat(verification.Devices)
+                .ToDictionary(device => device.DeviceId, StringComparer.Ordinal);
+            return new ImagingJobResult(
+                ImagingOperation.Write,
+                verification.Canceled,
+                devices.Select(device => byDevice[device.Id]).ToArray());
         }
 
         return result;
@@ -230,6 +247,13 @@ internal static class PrivilegedHelperServer
             {
                 await engine.QuickWipeAsync(streams[device.Id], device.Size, cancellationToken: cancellationToken).ConfigureAwait(false);
                 results.Add(new DeviceOperationResult(device.Id, true, device.Size));
+            }
+            catch (OperationCanceledException)
+            {
+                results.Add(new DeviceOperationResult(device.Id, false, 0, "Canceled"));
+                results.AddRange(devices.Skip(index + 1).Select(remaining =>
+                    new DeviceOperationResult(remaining.Id, false, 0, "Canceled")));
+                return new ImagingJobResult(ImagingOperation.Wipe, true, results);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {

@@ -181,7 +181,7 @@ internal sealed class MainWindowViewModel : ObservableObject
             var devices = await _catalog.GetDevicesAsync().ConfigureAwait(false);
             var threshold = _settings.OmitDrivesThresholdGiB * 1024 * 1024 * 1024;
             var visible = devices.Where(device => !device.IsSystem)
-                .Where(device => _settings.ShowExternalHardDrives || device.IsRemovable || !device.IsExternal)
+                .Where(device => device.IsRemovable || _settings.ShowExternalHardDrives && device.IsExternal)
                 .Where(device => !_settings.OmitDrivesOverSize || device.Size <= threshold)
                 .ToArray();
 

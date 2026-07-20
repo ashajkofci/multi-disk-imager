@@ -38,6 +38,11 @@ internal sealed class MacPlist
             ? value.Name.LocalName == "true" || (value.Name.LocalName != "false" && fallback)
             : fallback;
 
+    public IReadOnlyList<string> StringArray(string key) =>
+        _values.TryGetValue(key, out var array) && array.Name.LocalName == "array"
+            ? array.Elements("string").Select(element => element.Value).ToArray()
+            : [];
+
     public IReadOnlyList<MacPlist> DictionaryArray(string key)
     {
         if (!_values.TryGetValue(key, out var array) || array.Name.LocalName != "array")
@@ -52,4 +57,3 @@ internal sealed class MacPlist
         }).ToArray();
     }
 }
-

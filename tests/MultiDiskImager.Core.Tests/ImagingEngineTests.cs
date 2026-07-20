@@ -101,6 +101,18 @@ public sealed class ImagingEngineTests
         Assert.All(result[^512..], value => Assert.Equal(0, value));
     }
 
+    [Fact]
+    public async Task QuickWipeDoesNotExtendADeviceWhenWipeRegionsOverlap()
+    {
+        var data = Enumerable.Repeat((byte)0xA5, 20).ToArray();
+        await using var stream = new MemoryStream(data, writable: true);
+
+        await new ImagingEngine().QuickWipeAsync(stream, data.Length, 16);
+
+        Assert.Equal(20, stream.Length);
+        Assert.All(stream.ToArray(), value => Assert.Equal(0, value));
+    }
+
     private sealed class FailingWriteStream(long failAfter) : MemoryStream
     {
         private long _written;
@@ -117,4 +129,3 @@ public sealed class ImagingEngineTests
         }
     }
 }
-
