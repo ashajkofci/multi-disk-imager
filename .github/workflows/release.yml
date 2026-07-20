@@ -83,19 +83,9 @@ jobs:
       - name: Package Windows artifacts
         if: matrix.platform == 'windows'
         shell: pwsh
-        env:
-          WINDOWS_MSIX_IDENTITY_NAME: ${{ vars.WINDOWS_MSIX_IDENTITY_NAME || 'bNovate.MultiDiskImager' }}
-          WINDOWS_MSIX_PUBLISHER: ${{ vars.WINDOWS_MSIX_PUBLISHER || 'CN=bNovate Technologies SA' }}
         run: |
           $ErrorActionPreference = 'Stop'
           Set-StrictMode -Version Latest
-
-          if ($env:WINDOWS_MSIX_IDENTITY_NAME -notmatch '^[A-Za-z0-9.-]{3,50}$') {
-            throw 'WINDOWS_MSIX_IDENTITY_NAME must be 3-50 characters using letters, digits, periods, or hyphens.'
-          }
-          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_MSIX_PUBLISHER)) {
-            throw 'WINDOWS_MSIX_PUBLISHER cannot be empty.'
-          }
 
           $packageRoot = Join-Path $env:RUNNER_TEMP 'bnovate-multi-disk-imager-msix'
           try {
@@ -115,10 +105,7 @@ jobs:
             Copy-Item $executable (Join-Path $packageRoot 'MultiDiskImager.exe')
             Copy-Item packaging/windows/Assets/*.png (Join-Path $packageRoot 'Assets')
 
-            $publisher = [System.Security.SecurityElement]::Escape($env:WINDOWS_MSIX_PUBLISHER)
             $manifest = Get-Content packaging/windows/AppxManifest.xml.template -Raw
-            $manifest = $manifest.Replace('__IDENTITY_NAME__', $env:WINDOWS_MSIX_IDENTITY_NAME)
-            $manifest = $manifest.Replace('__PUBLISHER__', $publisher)
             $manifest = $manifest.Replace('__VERSION__', '${{ needs.validate.outputs.msix_version }}')
             Set-Content (Join-Path $packageRoot 'AppxManifest.xml') $manifest -Encoding utf8
 

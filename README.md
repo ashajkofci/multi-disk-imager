@@ -73,12 +73,7 @@ Create a release by pushing an annotated or lightweight SemVer tag such as `v1.2
 
 The Windows job uses the SDK's MakeAppx tool to create an unsigned MSIX. No signing certificate or GitHub secret is required.
 
-Optional repository Actions variables are:
-
-- `WINDOWS_MSIX_IDENTITY_NAME`: Package identity; defaults to `bNovate.MultiDiskImager`.
-- `WINDOWS_MSIX_PUBLISHER`: Manifest publisher; defaults to `CN=bNovate Technologies SA`.
-
-The identity and publisher must be changed to the values assigned by Partner Center or the downstream signing certificate when the package is prepared for installation. The package declares `runFullTrust` and `allowElevation` because raw-device operations use an administrator helper; Microsoft Store submission of `allowElevation` requires approval.
+The manifest uses the Partner Center identity `bNovateTechnologiesSA.bNovateMultiDiskImager` and publisher `CN=AFC41234-54C7-478C-B9B2-37E1553475F1`. Windows derives the package family name `bNovateTechnologiesSA.bNovateMultiDiskImager_wn2prwzkpdthy` from those values. The package declares `runFullTrust` and `allowElevation` because raw-device operations use an administrator helper; Microsoft Store submission of `allowElevation` requires approval.
 
 ### Languages
 

@@ -5,8 +5,8 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
   <Identity
-    Name="__IDENTITY_NAME__"
-    Publisher="__PUBLISHER__"
+    Name="bNovateTechnologiesSA.bNovateMultiDiskImager"
+    Publisher="CN=AFC41234-54C7-478C-B9B2-37E1553475F1"
     Version="__VERSION__"
     ProcessorArchitecture="x64" />
   <Properties>
