@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using MultiDiskImager.Core;
+using MultiDiskImager.Localization;
 using MultiDiskImager.Platform;
 
 namespace MultiDiskImager.Views;
@@ -15,12 +16,12 @@ internal sealed partial class DeviceInfoWindow : Window
     {
         _device = device;
         InitializeComponent();
-        Title = $"Device info — {device.Id}";
+        Title = $"{Localizer.Get("Info")} — {device.Id}";
         this.FindControl<TextBlock>("ModelText")!.Text = device.Model;
         this.FindControl<TextBlock>("DetailsText")!.Text =
-            $"{device.Id} • {ByteSize.Format(device.Size)} ({device.Size:N0} bytes) • {device.BusType} • " +
-            $"{device.LogicalSectorSize}-byte sectors" +
-            (string.IsNullOrWhiteSpace(device.Serial) ? string.Empty : $" • Serial {device.Serial}");
+            $"{device.Id} • {ByteSize.Format(device.Size)} ({device.Size:N0} {Localizer.Get("BytesLabel")}) • {device.BusType} • " +
+            $"{device.LogicalSectorSize}-{Localizer.Get("SectorsLabel")}" +
+            (string.IsNullOrWhiteSpace(device.Serial) ? string.Empty : $" • {Localizer.Get("SerialLabel")} {device.Serial}");
         Opened += OnOpened;
     }
 
@@ -32,10 +33,10 @@ internal sealed partial class DeviceInfoWindow : Window
         try
         {
             var layout = await PlatformPartitionInspector.InspectAsync(_device);
-            holder.Children.Add(new TextBlock { Text = $"Partition scheme: {layout.Scheme}", FontWeight = Avalonia.Media.FontWeight.SemiBold });
+            holder.Children.Add(new TextBlock { Text = $"{Localizer.Get("Info")}: {layout.Scheme}", FontWeight = Avalonia.Media.FontWeight.SemiBold });
             if (layout.Partitions.Count == 0)
             {
-                holder.Children.Add(new TextBlock { Text = "No allocated partitions found.", Opacity = 0.7 });
+                holder.Children.Add(new TextBlock { Text = $"{Localizer.Get("Info")}: 0", Opacity = 0.7 });
             }
 
             foreach (var partition in layout.Partitions)
@@ -44,7 +45,7 @@ internal sealed partial class DeviceInfoWindow : Window
                 var panel = new StackPanel { Spacing = 4 };
                 panel.Children.Add(new TextBlock
                 {
-                    Text = $"Partition {partition.Number}: {partition.Name ?? partition.Type} — {ByteSize.Format(partition.Length)}",
+                    Text = $"{Localizer.Get("Info")} {partition.Number}: {partition.Name ?? partition.Type} — {ByteSize.Format(partition.Length)}",
                     FontWeight = Avalonia.Media.FontWeight.SemiBold
                 });
                 panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = 1, Value = fraction, Height = 8, HorizontalAlignment = HorizontalAlignment.Stretch });
@@ -53,10 +54,9 @@ internal sealed partial class DeviceInfoWindow : Window
         }
         catch (Exception exception)
         {
-            holder.Children.Add(new TextBlock { Text = $"Unable to inspect partitions: {exception.Message}", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+            holder.Children.Add(new TextBlock { Text = $"{Localizer.Get("Failed")}: {exception.Message}", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
         }
     }
 
     private void OnClose(object? sender, RoutedEventArgs e) => Close();
 }
-

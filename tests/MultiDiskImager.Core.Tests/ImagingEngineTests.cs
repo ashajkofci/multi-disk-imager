@@ -51,6 +51,28 @@ public sealed class ImagingEngineTests
     }
 
     [Fact]
+    public async Task CopyReportsZeroSpeedWhenADeviceCompletes()
+    {
+        var input = new byte[2048];
+        await using var source = new MemoryStream(input, writable: false);
+        await using var destination = new MemoryStream();
+        var reports = new List<ImagingProgress>();
+        var progress = new InlineProgress<ImagingProgress>(reports.Add);
+
+        await new ImagingEngine(512).CopyToDevicesAsync(
+            source,
+            new Dictionary<string, Stream> { ["device"] = destination },
+            input.Length,
+            512,
+            ImagingOperation.Write,
+            progress);
+
+        var completed = Assert.Single(reports, report => report.DeviceId == "device" && report.Fraction == 1);
+        Assert.Equal("Complete", completed.Stage);
+        Assert.Equal(0, completed.BytesPerSecond);
+    }
+
+    [Fact]
     public async Task VerifyReportsFirstMismatchForEachDevice()
     {
         var image = Enumerable.Range(0, 4096).Select(index => (byte)(index % 253)).ToArray();
@@ -127,5 +149,10 @@ public sealed class ImagingEngineTests
             await base.WriteAsync(buffer, cancellationToken);
             _written += buffer.Length;
         }
+    }
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }

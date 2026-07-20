@@ -206,11 +206,11 @@ internal sealed class MainWindowViewModel : ObservableObject
             });
             Status = visible.Length == 0
                 ? OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() || OperatingSystem.IsLinux() ? Localizer.Get("NoEligibleDevices") : Localizer.Get("UnsupportedPlatform")
-                : $"{visible.Length} device{(visible.Length == 1 ? string.Empty : "s")} available";
+                : Localizer.Format("DevicesAvailable", visible.Length);
         }
         catch (Exception exception)
         {
-            Status = $"Device refresh failed: {exception.Message}";
+            Status = $"{Localizer.Get("DeviceRefreshFailed")}: {exception.Message}";
         }
         finally
         {
@@ -246,22 +246,22 @@ internal sealed class MainWindowViewModel : ObservableObject
             var request = new HelperRequest(operation, ImagePath, selected, VerifyAfter, OnlyAllocated, allowCrop, byteCount);
             var result = await PrivilegedHelperClient.RunAsync(request, progress, _operationCancellation.Token);
             Status = result.Canceled
-                ? "Operation canceled; the target may contain incomplete data"
+                ? Localizer.Get("OperationCanceledWarning")
                 : result.Success
-                    ? $"{operation} completed successfully"
+                    ? Localizer.Get("CompletedSuccessfully")
                     : result.PartialSuccess
-                        ? $"{operation} completed on some devices"
-                        : $"{operation} failed";
+                        ? Localizer.Get("PartialCompletion")
+                        : Localizer.Get("Failed");
             return result;
         }
         catch (OperationCanceledException)
         {
-            Status = "Operation canceled; the target may contain incomplete data";
+            Status = Localizer.Get("OperationCanceledWarning");
             return new ImagingJobResult(operation, true, selected.Select(device => new DeviceOperationResult(device.Id, false, 0, "Canceled")).ToArray());
         }
         catch (Exception exception)
         {
-            Status = $"{operation} failed: {exception.Message}";
+            Status = $"{Localizer.Get("Failed")}: {exception.Message}";
             throw;
         }
         finally
@@ -278,7 +278,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     {
         if (!File.Exists(ImagePath))
         {
-            throw new FileNotFoundException("Select an existing image file first.", ImagePath);
+            throw new FileNotFoundException(Localizer.Get("SelectExistingImage"), ImagePath);
         }
 
         IsBusy = true;
@@ -289,10 +289,10 @@ internal sealed class MainWindowViewModel : ObservableObject
             var progress = new Progress<double>(value =>
             {
                 Progress = value * 100;
-                ProgressText = $"Checksum {value:P0}";
+                ProgressText = $"{Localizer.Get("Checksum")} {value:P0}";
             });
             Checksum = await ChecksumService.ComputeAsync(stream, ChecksumAlgorithm, progress, _operationCancellation.Token);
-            Status = $"{ChecksumAlgorithm} checksum calculated";
+            Status = $"{ChecksumAlgorithm}: {Localizer.Get("Success")}";
         }
         finally
         {
@@ -387,14 +387,14 @@ internal sealed class MainWindowViewModel : ObservableObject
         }
 
         _overallFraction = _deviceFractions.Count == 0 ? value.Fraction : _deviceFractions.Values.Min();
-        var totalSpeed = _latestDeviceProgress.Values.Sum(item => item.BytesPerSecond);
+        var totalSpeed = _latestDeviceProgress.Values.Where(item => item.Fraction < 1).Sum(item => item.BytesPerSecond);
         var overallRemaining = _latestDeviceProgress.Values.Select(item => item.Remaining).Where(item => item.HasValue).Select(item => item!.Value).DefaultIfEmpty().Max();
         var overallBytes = (long)Math.Round(_overallFraction * value.TotalBytes);
         _lastProgress = value with { BytesProcessed = overallBytes, BytesPerSecond = totalSpeed, Remaining = overallRemaining };
         RaisePropertyChanged(nameof(WindowTitle));
         Progress = _overallFraction * 100;
-        var remaining = overallRemaining > TimeSpan.Zero ? $" • {overallRemaining:hh\\:mm\\:ss} remaining" : string.Empty;
-        var overallStage = _overallFraction >= 1 ? "Complete" : value.Stage == "Complete" ? "Transferring" : value.Stage;
+        var remaining = overallRemaining > TimeSpan.Zero ? $" • {overallRemaining:hh\\:mm\\:ss} {Localizer.Get("RemainingLabel")}" : string.Empty;
+        var overallStage = _overallFraction >= 1 ? Localizer.Get("CompleteStage") : Localizer.Get("TransferStage");
         ProgressText = $"{overallStage} • {_overallFraction:P0} • {ByteSize.Format(overallBytes)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)totalSpeed)}/s{remaining}";
 
         var item = DeviceProgress.FirstOrDefault(candidate => candidate.DeviceId == key);
@@ -428,27 +428,27 @@ internal sealed class MainWindowViewModel : ObservableObject
 
         if (selected.Any(device => device.IsSystem))
         {
-            throw new InvalidOperationException("The system disk cannot be selected.");
+            throw new InvalidOperationException(Localizer.Get("SystemDiskProtected"));
         }
 
         if (operation == ImagingOperation.Read && selected.Count != 1)
         {
-            throw new InvalidOperationException("Reading requires exactly one source device.");
+            throw new InvalidOperationException(Localizer.Get("ReadRequiresOne"));
         }
 
         if (operation != ImagingOperation.Wipe && string.IsNullOrWhiteSpace(ImagePath))
         {
-            throw new InvalidOperationException("Select an image path.");
+            throw new InvalidOperationException(Localizer.Get("SelectImagePath"));
         }
 
         if (operation is ImagingOperation.Write or ImagingOperation.Verify && !File.Exists(ImagePath))
         {
-            throw new FileNotFoundException("The selected image does not exist.", ImagePath);
+            throw new FileNotFoundException(Localizer.Get("ImageDoesNotExist"), ImagePath);
         }
 
         if (operation is ImagingOperation.Write or ImagingOperation.Wipe && selected.Any(device => device.IsReadOnly))
         {
-            throw new InvalidOperationException("One or more selected devices are read-only.");
+            throw new InvalidOperationException(Localizer.Get("ReadOnlySelected"));
         }
     }
 

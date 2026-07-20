@@ -121,9 +121,10 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
                 if (progress is not null && (stopwatch.Elapsed - lastReport >= TimeSpan.FromMilliseconds(250) || processed >= total))
                 {
                     lastReport = stopwatch.Elapsed;
-                    var speed = stopwatch.Elapsed.TotalSeconds <= 0 ? 0 : processed / stopwatch.Elapsed.TotalSeconds;
+                    var isComplete = processed >= total;
+                    var speed = isComplete || stopwatch.Elapsed.TotalSeconds <= 0 ? 0 : processed / stopwatch.Elapsed.TotalSeconds;
                     var remaining = speed <= 0 ? (TimeSpan?)null : TimeSpan.FromSeconds((total - processed) / speed);
-                    progress.Report(new ImagingProgress(operation, processed, total, speed, remaining, processed >= total ? "Complete" : "Transferring", id));
+                    progress.Report(new ImagingProgress(operation, processed, total, speed, remaining, isComplete ? "Complete" : "Transferring", id));
                 }
             }
             await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -380,7 +381,7 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
 
     private static ImagingProgress CreateProgress(ImagingOperation operation, long processed, long total, string stage, Stopwatch stopwatch)
     {
-        var speed = stopwatch.Elapsed.TotalSeconds <= 0 ? 0 : processed / stopwatch.Elapsed.TotalSeconds;
+        var speed = processed >= total || stopwatch.Elapsed.TotalSeconds <= 0 ? 0 : processed / stopwatch.Elapsed.TotalSeconds;
         TimeSpan? remaining = speed <= 0 || total <= processed ? TimeSpan.Zero : TimeSpan.FromSeconds((total - processed) / speed);
         return new ImagingProgress(operation, processed, total, speed, remaining, stage);
     }

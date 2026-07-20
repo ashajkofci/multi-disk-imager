@@ -105,7 +105,7 @@ internal sealed partial class MainWindow : Window
             long? byteCount = null;
             if (operation == ImagingOperation.Read && File.Exists(ViewModel.ImagePath))
             {
-                var overwrite = await ConfirmAsync("Replace image?", $"{Path.GetFileName(ViewModel.ImagePath)} already exists and will be replaced.", "Replace");
+                var overwrite = await ConfirmAsync(Localizer.Get("ReplaceTitle"), $"{Path.GetFileName(ViewModel.ImagePath)} {Localizer.Get("AlreadyExists")}", Localizer.Get("Replace"));
                 if (!overwrite)
                 {
                     return;
@@ -119,9 +119,10 @@ internal sealed partial class MainWindow : Window
                 if (imageSize > smallest)
                 {
                     var dataFound = await ViewModel.TailContainsDataAsync(smallest);
-                    var message = $"The image is {ByteSize.Format(imageSize - smallest)} larger than {selected.OrderBy(device => device.Size).First().Id}. " +
-                                  $"The discarded tail {(dataFound ? "contains non-zero data" : "contains only zeroes")}. Write only the first {ByteSize.Format(smallest)}?";
-                    if (!await ConfirmAsync("Image is too large", message, "Crop and write"))
+                    var message = $"{Localizer.Get("ImageTooLarge")}: +{ByteSize.Format(imageSize - smallest)} — {selected.OrderBy(device => device.Size).First().Id}. " +
+                                  $"{Localizer.Get("CropAndWrite")}: {ByteSize.Format(smallest)}?" +
+                                  (dataFound ? $" {Localizer.Get("StopWarning")}" : string.Empty);
+                    if (!await ConfirmAsync(Localizer.Get("ImageTooLarge"), message, Localizer.Get("CropAndWrite")))
                     {
                         return;
                     }
@@ -133,12 +134,11 @@ internal sealed partial class MainWindow : Window
 
             if (operation == ImagingOperation.Wipe || operation == ImagingOperation.Write && ViewModel.Settings.DisplayWriteWarnings)
             {
-                var action = operation == ImagingOperation.Wipe ? "remove partition and filesystem metadata from" : "overwrite";
                 var devices = string.Join(Environment.NewLine, selected.Select(device => $"• {device.Model} — {ByteSize.Format(device.Size)} ({device.Id})"));
                 if (!await ConfirmAsync(
-                        operation == ImagingOperation.Wipe ? "Confirm quick wipe" : "Confirm write",
-                        $"This will {action} the following device(s):{Environment.NewLine}{Environment.NewLine}{devices}{Environment.NewLine}{Environment.NewLine}This cannot be undone. Verify the model and size before continuing.",
-                        operation == ImagingOperation.Wipe ? "Quick wipe" : "Write image"))
+                        operation == ImagingOperation.Wipe ? Localizer.Get("QuickWipe") : Localizer.Get("WriteImage"),
+                        $"{devices}{Environment.NewLine}{Environment.NewLine}{Localizer.Get("StopWarning")}",
+                        operation == ImagingOperation.Wipe ? Localizer.Get("QuickWipe") : Localizer.Get("WriteImage")))
                 {
                     return;
                 }
@@ -151,7 +151,7 @@ internal sealed partial class MainWindow : Window
             }
             var details = string.Join(Environment.NewLine, result.Devices.Select(device =>
                 $"{device.DeviceId}: {(device.Success ? Localizer.Get("Success") : device.Error ?? Localizer.Get("Failed"))}" +
-                (device.FirstMismatchOffset is { } offset ? $" (first mismatch at byte {offset:N0})" : string.Empty)));
+                (device.FirstMismatchOffset is { } offset ? $" ({Localizer.Get("Failed")}: {offset:N0} {Localizer.Get("BytesLabel")})" : string.Empty)));
             await new MessageDialog(result.Success ? Localizer.Get("OperationComplete") : Localizer.Get("OperationResults"), details, Localizer.Get("Close"), cancelVisible: false).ShowDialog<bool>(this);
             if (result.Success && ViewModel.Settings.AutoCloseOnSuccess)
             {
@@ -161,7 +161,7 @@ internal sealed partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            await ShowErrorAsync($"{operation} failed", exception.Message);
+            await ShowErrorAsync(Localizer.Get("Failed"), exception.Message);
         }
     }
 
@@ -209,7 +209,7 @@ internal sealed partial class MainWindow : Window
         }
 
         e.Cancel = true;
-        if (await ConfirmAsync(Localizer.Get("CancelActiveOperation"), "Stopping now may leave the target with incomplete or corrupt data.", Localizer.Get("Cancel")))
+        if (await ConfirmAsync(Localizer.Get("CancelActiveOperation"), Localizer.Get("StopWarning"), Localizer.Get("Cancel")))
         {
             ViewModel.Cancel();
             _allowClose = true;

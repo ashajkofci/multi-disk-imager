@@ -14,7 +14,7 @@ internal sealed partial class AboutWindow : Window
     public AboutWindow()
     {
         InitializeComponent();
-        this.FindControl<TextBlock>("VersionText")!.Text = $"Version {UpdateService.CurrentVersionText}";
+        this.FindControl<TextBlock>("VersionText")!.Text = $"{Localizer.Get("VersionLabel")} {UpdateService.CurrentVersionText}";
         this.FindControl<TextBlock>("AuthorText")!.Text = $"{Localizer.Get("Author")}: Adrian Shajkofci";
     }
 

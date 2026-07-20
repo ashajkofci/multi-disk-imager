@@ -1,4 +1,5 @@
 using MultiDiskImager.Core;
+using MultiDiskImager.Localization;
 
 namespace MultiDiskImager.ViewModels;
 
@@ -10,7 +11,7 @@ internal sealed class DeviceItemViewModel(DeviceDescriptor device) : ObservableO
     public string Id => Device.Id;
     public string Model => Device.Model;
     public string Size => ByteSize.Format(Device.Size);
-    public string Details => $"{Device.BusType} • {Device.LogicalSectorSize}-byte sectors" +
+    public string Details => $"{Device.BusType} • {Device.LogicalSectorSize}-{Localizer.Get("SectorsLabel")}" +
                              (Device.MountPoints.Count > 0 ? $" • {string.Join(", ", Device.MountPoints)}" : string.Empty);
     public bool IsReadOnly => Device.IsReadOnly;
 
@@ -20,4 +21,3 @@ internal sealed class DeviceItemViewModel(DeviceDescriptor device) : ObservableO
         set => SetProperty(ref _isSelected, value);
     }
 }
-
