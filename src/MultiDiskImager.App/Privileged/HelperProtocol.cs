@@ -9,8 +9,7 @@ internal sealed record HelperRequest(
     bool VerifyAfter,
     bool OnlyAllocated,
     bool AllowCrop,
-    long? ByteCount = null,
-    uint? MetadataUserId = null);
+    long? ByteCount = null);
 
 internal sealed record HelperEvent(
     string Type,

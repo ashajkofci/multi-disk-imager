@@ -122,9 +122,10 @@ internal static class PrivilegedHelperServer
         CancellationToken cancellationToken)
     {
         ReportStage(progress, request.Operation, "Checking selected devices…");
-        var catalog = PlatformServices.CreateCatalog(request.MetadataUserId);
         var rawAccess = PlatformServices.CreateRawAccess();
-        var devices = await ValidateDevicesAsync(catalog, request.Devices, cancellationToken).ConfigureAwait(false);
+        var devices = OperatingSystem.IsMacOS()
+            ? ValidateMacDeviceSnapshots(request.Devices)
+            : await ValidateDevicesAsync(PlatformServices.CreateCatalog(), request.Devices, cancellationToken).ConfigureAwait(false);
         var prepared = new List<DeviceDescriptor>();
         var streams = new Dictionary<string, Stream>(StringComparer.Ordinal);
         await using var inhibitor = await PlatformPowerInhibitor.AcquireAsync().ConfigureAwait(false);
@@ -346,6 +347,32 @@ internal static class PrivilegedHelperServer
         }
 
         return validated;
+    }
+
+    private static IReadOnlyList<DeviceDescriptor> ValidateMacDeviceSnapshots(IReadOnlyList<DeviceDescriptor> devices)
+    {
+        if (devices.Count == 0)
+        {
+            throw new InvalidOperationException("No devices were selected.");
+        }
+
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var device in devices)
+        {
+            if (device.IsSystem)
+            {
+                throw new UnauthorizedAccessException($"The system disk {device.Id} is never a valid target.");
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(device.Id, @"^disk\d+$", System.Text.RegularExpressions.RegexOptions.CultureInvariant) ||
+                !device.Path.Equals($"/dev/{device.Id}", StringComparison.Ordinal) ||
+                device.Size <= 0 || device.LogicalSectorSize < 512 || !ids.Add(device.Id))
+            {
+                throw new IOException($"Device {device.Id} has invalid metadata. Refresh and select it again.");
+            }
+        }
+
+        return devices;
     }
 
     private static void EnsureFreeSpace(string imagePath, long required)

@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.IO.Pipes;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using MultiDiskImager.Core;
+using MultiDiskImager.Platform;
 
 namespace MultiDiskImager.Privileged;
 
@@ -18,10 +18,11 @@ internal static class PrivilegedHelperClient
     {
         if (OperatingSystem.IsMacOS())
         {
-            // diskutil can block when invoked in osascript's root login
-            // context. The helper still performs destructive access as root,
-            // but metadata queries should use the signed-in user's context.
-            request = request with { MetadataUserId = GetUserId() };
+            progress?.Report(new ImagingProgress(request.Operation, 0, 0, 0, null, "Checking selected devices…"));
+            request = request with
+            {
+                Devices = await ValidateMacDevicesAsync(request.Devices, cancellationToken).ConfigureAwait(false)
+            };
         }
 
         var pipeName = CreatePipeName();
@@ -157,10 +158,13 @@ internal static class PrivilegedHelperClient
         return OperatingSystem.IsWindows() ? identifier : $"/tmp/{identifier}";
     }
 
-    [DllImport("libc")]
-    private static extern uint getuid();
-
-    private static uint GetUserId() => getuid();
+    [System.Runtime.Versioning.SupportedOSPlatform("macos")]
+    private static async Task<IReadOnlyList<DeviceDescriptor>> ValidateMacDevicesAsync(
+        IReadOnlyList<DeviceDescriptor> expected,
+        CancellationToken cancellationToken)
+    {
+        return await new MacDeviceCatalog().ValidateSelectionsAsync(expected, cancellationToken).ConfigureAwait(false);
+    }
 
     private static string ShellQuote(string value) => $"'{value.Replace("'", "'\\''", StringComparison.Ordinal)}'";
 }

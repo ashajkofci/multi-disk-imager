@@ -4,7 +4,7 @@ namespace MultiDiskImager.Platform;
 
 internal static class PlatformServices
 {
-    public static IBlockDeviceCatalog CreateCatalog(uint? macMetadataUserId = null)
+    public static IBlockDeviceCatalog CreateCatalog()
     {
         if (OperatingSystem.IsWindows())
         {
@@ -13,7 +13,7 @@ internal static class PlatformServices
 
         if (OperatingSystem.IsMacOS())
         {
-            return new MacDeviceCatalog(macMetadataUserId);
+            return new MacDeviceCatalog();
         }
 
         if (OperatingSystem.IsLinux())

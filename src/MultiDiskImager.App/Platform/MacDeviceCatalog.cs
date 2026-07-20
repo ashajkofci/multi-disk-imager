@@ -9,10 +9,7 @@ namespace MultiDiskImager.Platform;
 internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
 {
     private static readonly TimeSpan DiskUtilTimeout = TimeSpan.FromSeconds(15);
-    private readonly uint? _metadataUserId;
     private IReadOnlySet<string>? _systemDiskIds;
-
-    public MacDeviceCatalog(uint? metadataUserId = null) => _metadataUserId = metadataUserId;
 
     public async Task<IReadOnlyList<DeviceDescriptor>> GetDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -84,6 +81,49 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
         return CreateDescriptor(info, id, 0, systemIds.Contains(id), mountPoints);
     }
 
+    public async Task<IReadOnlyList<DeviceDescriptor>> ValidateSelectionsAsync(
+        IReadOnlyList<DeviceDescriptor> expected,
+        CancellationToken cancellationToken = default)
+    {
+        var listResult = await RunDiskUtilAsync(["list", "-plist", "physical"], "Disk validation", cancellationToken).ConfigureAwait(false);
+        listResult.EnsureSuccess("Disk validation");
+        var list = MacPlist.Parse(listResult.StandardOutput);
+        var currentById = list.DictionaryArray("AllDisksAndPartitions")
+            .Where(disk => !string.IsNullOrWhiteSpace(disk.String("DeviceIdentifier")))
+            .ToDictionary(disk => disk.String("DeviceIdentifier")!, StringComparer.Ordinal);
+        var systemIds = await GetSystemDiskIdsAsync(cancellationToken).ConfigureAwait(false);
+        var validated = new List<DeviceDescriptor>(expected.Count);
+
+        foreach (var requested in expected)
+        {
+            if (!currentById.TryGetValue(requested.Id, out var disk))
+            {
+                throw new IOException($"Device {requested.Id} is no longer connected.");
+            }
+
+            if (systemIds.Contains(requested.Id))
+            {
+                throw new UnauthorizedAccessException($"The system disk {requested.Id} is never a valid target.");
+            }
+
+            var currentSize = disk.Integer("Size");
+            if (!requested.Path.Equals($"/dev/{requested.Id}", StringComparison.Ordinal) ||
+                currentSize <= 0 || currentSize != requested.Size)
+            {
+                throw new IOException($"Device {requested.Id} changed after selection. Refresh and select it again.");
+            }
+
+            var mountPoints = disk.DictionaryArray("Partitions")
+                .Select(partition => partition.String("MountPoint"))
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Cast<string>()
+                .ToArray();
+            validated.Add(requested with { IsSystem = false, MountPoints = mountPoints });
+        }
+
+        return validated;
+    }
+
     private async Task<IReadOnlySet<string>> GetSystemDiskIdsAsync(CancellationToken cancellationToken)
     {
         if (_systemDiskIds is not null)
@@ -148,16 +188,6 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
         timeout.CancelAfter(DiskUtilTimeout);
         try
         {
-            if (_metadataUserId is > 0)
-            {
-                var userArguments = new[]
-                    {
-                        "-n", "-u", $"#{_metadataUserId.Value}", "--", "/usr/sbin/diskutil"
-                    }
-                    .Concat(arguments);
-                return await ProcessRunner.RunAsync("/usr/bin/sudo", userArguments, timeout.Token).ConfigureAwait(false);
-            }
-
             return await ProcessRunner.RunAsync("/usr/sbin/diskutil", arguments, timeout.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
