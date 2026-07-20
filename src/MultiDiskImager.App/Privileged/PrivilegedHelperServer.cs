@@ -30,7 +30,7 @@ internal static class PrivilegedHelperServer
 
         try
         {
-            var progress = new Progress<ImagingProgress>(value =>
+            var progress = new InlineProgress<ImagingProgress>(value =>
             {
                 try
                 {
@@ -312,5 +312,10 @@ internal static class PrivilegedHelperServer
         {
             writeLock.Release();
         }
+    }
+
+    private sealed class InlineProgress<T>(Action<T> callback) : IProgress<T>
+    {
+        public void Report(T value) => callback(value);
     }
 }

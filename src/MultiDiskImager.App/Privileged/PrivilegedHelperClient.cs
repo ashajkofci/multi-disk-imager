@@ -25,7 +25,15 @@ internal static class PrivilegedHelperClient
         using var helperProcess = LaunchHelper(pipeName);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(2));
-        await pipe.WaitForConnectionAsync(timeout.Token).ConfigureAwait(false);
+        var connectionTask = pipe.WaitForConnectionAsync(timeout.Token);
+        var helperExitTask = helperProcess.WaitForExitAsync(CancellationToken.None);
+        if (await Task.WhenAny(connectionTask, helperExitTask).ConfigureAwait(false) == helperExitTask)
+        {
+            await helperExitTask.ConfigureAwait(false);
+            throw new UnauthorizedAccessException("Administrator approval was canceled or the privileged helper could not start.");
+        }
+
+        await connectionTask.ConfigureAwait(false);
         using var reader = new StreamReader(pipe, leaveOpen: true);
         using var writer = new StreamWriter(pipe, leaveOpen: true) { AutoFlush = true };
         await writer.WriteLineAsync(JsonSerializer.Serialize(request, JsonOptions).AsMemory(), cancellationToken).ConfigureAwait(false);
@@ -117,4 +125,3 @@ internal static class PrivilegedHelperClient
 
     private static string ShellQuote(string value) => $"'{value.Replace("'", "'\\''", StringComparison.Ordinal)}'";
 }
-

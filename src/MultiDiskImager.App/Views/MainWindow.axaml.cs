@@ -125,7 +125,7 @@ internal sealed partial class MainWindow : Window
                 }
             }
 
-            if (operation is ImagingOperation.Write or ImagingOperation.Wipe)
+            if (operation == ImagingOperation.Wipe || operation == ImagingOperation.Write && ViewModel.Settings.DisplayWriteWarnings)
             {
                 var action = operation == ImagingOperation.Wipe ? "remove partition and filesystem metadata from" : "overwrite";
                 var devices = string.Join(Environment.NewLine, selected.Select(device => $"• {device.Model} — {ByteSize.Format(device.Size)} ({device.Id})"));
@@ -139,6 +139,10 @@ internal sealed partial class MainWindow : Window
             }
 
             var result = await ViewModel.RunAsync(operation, allowCrop, byteCount);
+            if (result.Success && ViewModel.Settings.EnableSoundNotification)
+            {
+                Services.NotificationService.Notify();
+            }
             var details = string.Join(Environment.NewLine, result.Devices.Select(device =>
                 $"{device.DeviceId}: {(device.Success ? "Success" : device.Error ?? "Failed")}" +
                 (device.FirstMismatchOffset is { } offset ? $" (first mismatch at byte {offset:N0})" : string.Empty)));

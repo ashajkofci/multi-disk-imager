@@ -4,7 +4,7 @@
         xmlns:controls="using:MultiDiskImager.Controls"
         x:Class="MultiDiskImager.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Multi Disk Imager"
+        Title="{Binding WindowTitle}"
         Width="920" Height="760" MinWidth="760" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True"

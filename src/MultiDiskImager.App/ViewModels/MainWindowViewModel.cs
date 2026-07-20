@@ -28,6 +28,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     private string _progressText = string.Empty;
     private IReadOnlyList<double> _speedSamples = [];
     private UpdateInfo? _availableUpdate;
+    private ImagingProgress? _lastProgress;
 
     public MainWindowViewModel(SettingsStore settingsStore, AppSettings settings, CommandLineOptions startupOptions)
     {
@@ -46,7 +47,13 @@ internal sealed class MainWindowViewModel : ObservableObject
     public string ImagePath
     {
         get => _imagePath;
-        set => SetProperty(ref _imagePath, value);
+        set
+        {
+            if (SetProperty(ref _imagePath, value))
+            {
+                RaisePropertyChanged(nameof(WindowTitle));
+            }
+        }
     }
 
     public bool VerifyAfter
@@ -130,6 +137,15 @@ internal sealed class MainWindowViewModel : ObservableObject
     }
 
     public bool HasAvailableUpdate => AvailableUpdate is not null;
+    public string WindowTitle => _settings.TitleExtra switch
+    {
+        TitleExtra.Percent when _lastProgress is not null => $"{_lastProgress.Fraction:P0} — Multi Disk Imager",
+        TitleExtra.CurrentSpeed when _lastProgress is not null => $"{ByteSize.Format((long)_lastProgress.BytesPerSecond)}/s — Multi Disk Imager",
+        TitleExtra.RemainingTime when _lastProgress?.Remaining is { } remaining => $"{remaining:hh\\:mm\\:ss} — Multi Disk Imager",
+        TitleExtra.ActiveDevice when SelectedDevices.FirstOrDefault() is { } device => $"{device.Id} — Multi Disk Imager",
+        TitleExtra.ImageFileName when !string.IsNullOrWhiteSpace(ImagePath) => $"{Path.GetFileName(ImagePath)} — Multi Disk Imager",
+        _ => "Multi Disk Imager"
+    };
     public ImagingOperation? StartupOperation => _startupOptions.Read
         ? ImagingOperation.Read
         : _startupOptions.Write
@@ -201,6 +217,8 @@ internal sealed class MainWindowViewModel : ObservableObject
         Validate(operation);
         IsBusy = true;
         Progress = 0;
+        _lastProgress = null;
+        RaisePropertyChanged(nameof(WindowTitle));
         ProgressText = "Preparing…";
         Checksum = string.Empty;
         SpeedSamples = [];
@@ -279,6 +297,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     {
         _settings = settings;
         RaisePropertyChanged(nameof(Settings));
+        RaisePropertyChanged(nameof(WindowTitle));
         await _settingsStore.SaveAsync(settings).ConfigureAwait(false);
         if (Application.Current is { } application)
         {
@@ -318,6 +337,8 @@ internal sealed class MainWindowViewModel : ObservableObject
 
     private void UpdateProgress(ImagingProgress value)
     {
+        _lastProgress = value;
+        RaisePropertyChanged(nameof(WindowTitle));
         Progress = value.Fraction * 100;
         var remaining = value.Remaining is { } duration && duration > TimeSpan.Zero ? $" • {duration:hh\\:mm\\:ss} remaining" : string.Empty;
         ProgressText = $"{value.Stage} • {value.Fraction:P0} • {ByteSize.Format(value.BytesProcessed)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)value.BytesPerSecond)}/s{remaining}";
