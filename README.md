@@ -32,7 +32,7 @@ SemVer releases publish self-contained builds for:
 - Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
 - Ubuntu 22.04+ ARM64: a self-contained executable in a `.tar.gz` archive.
 
-The release artifacts are unsigned. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. On macOS, use **Open** from Finder's context menu if Gatekeeper blocks the app. Administrator approval is requested only when raw-device access begins.
+The release artifacts do not use commercial signing identities. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. The macOS app has an ad-hoc signature so both Intel and Apple Silicon bundles are structurally valid. Move it to Applications, Control-click it in Finder, and choose **Open**. If macOS still blocks it, open **System Settings → Privacy & Security** and choose **Open Anyway** for the app. Administrator approval is requested only when raw-device access begins.
 
 On Windows, use the portable `.exe` directly. The pipeline also produces an unsigned `.msix` for enterprise or downstream distribution workflows; Windows requires that package to be signed before normal App Installer installation. Both contain the .NET runtime and native dependencies.
 

@@ -11,11 +11,32 @@ version="$2"
 arch="$3"
 output_dir="$4"
 app_dir="$output_dir/bNovate Multi Disk Imager.app"
+executable="$publish_dir/MultiDiskImager"
+
+case "$arch" in
+  x64) expected_arch="x86_64" ;;
+  arm64) expected_arch="arm64" ;;
+  *) echo "unsupported macOS architecture: $arch" >&2; exit 2 ;;
+esac
+
+if [[ ! -x "$executable" ]]; then
+  echo "published executable is missing or not executable: $executable" >&2
+  exit 1
+fi
+
+if ! lipo -archs "$executable" | tr ' ' '\n' | grep -Fxq "$expected_arch"; then
+  echo "published executable does not contain the expected $expected_arch architecture" >&2
+  lipo -archs "$executable" >&2
+  exit 1
+fi
+
+DOTNET_BUNDLE_EXTRACT_BASE_DIR="$output_dir/.bundle-extract" "$executable" --version >/dev/null
+rm -R "$output_dir/.bundle-extract" 2>/dev/null || true
 
 mkdir -p "$app_dir/Contents/MacOS"
 mkdir -p "$app_dir/Contents/Resources"
 sed "s/__VERSION__/$version/g" packaging/macos/Info.plist.template > "$app_dir/Contents/Info.plist"
-cp "$publish_dir/MultiDiskImager" "$app_dir/Contents/MacOS/MultiDiskImager"
+cp "$executable" "$app_dir/Contents/MacOS/MultiDiskImager"
 
 iconset="$output_dir/AppIcon.iconset"
 mkdir -p "$iconset"
@@ -32,6 +53,16 @@ done
 iconutil -c icns "$iconset" -o "$app_dir/Contents/Resources/AppIcon.icns"
 rm -R "$iconset"
 chmod 755 "$app_dir/Contents/MacOS/MultiDiskImager"
+plutil -lint "$app_dir/Contents/Info.plist" >/dev/null
+
+# Apple Silicon requires code-signing metadata even for builds distributed
+# without a Developer ID. An ad-hoc signature remains user-overridable in
+# Privacy & Security while avoiding a structurally invalid app bundle.
+codesign --force --sign - "$app_dir/Contents/MacOS/MultiDiskImager"
+codesign --force --sign - "$app_dir"
+codesign --verify --deep --strict --verbose=2 "$app_dir"
+DOTNET_BUNDLE_EXTRACT_BASE_DIR="$output_dir/.bundle-extract" "$app_dir/Contents/MacOS/MultiDiskImager" --version >/dev/null
+rm -R "$output_dir/.bundle-extract" 2>/dev/null || true
 
 archive="$output_dir/bnovate-multi-disk-imager-$version-macos-$arch.zip"
 ditto -c -k --sequesterRsrc --keepParent "$app_dir" "$archive"

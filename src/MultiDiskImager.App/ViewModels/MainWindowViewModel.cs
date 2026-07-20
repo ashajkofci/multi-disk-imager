@@ -32,6 +32,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     private readonly Dictionary<string, double> _deviceFractions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ImagingProgress> _latestDeviceProgress = new(StringComparer.Ordinal);
     private double _overallFraction;
+    private ImagingOperation? _progressOperation;
     private UpdateInfo? _availableUpdate;
     private ImagingProgress? _lastProgress;
 
@@ -232,10 +233,16 @@ internal sealed class MainWindowViewModel : ObservableObject
         _deviceFractions.Clear();
         _latestDeviceProgress.Clear();
         _overallFraction = 0;
+        _progressOperation = operation;
         foreach (var device in selected)
         {
             _deviceFractions[device.Id] = 0;
-            DeviceProgress.Add(new DeviceProgressViewModel(device.Id) { Percentage = 0, Details = "0%" });
+            DeviceProgress.Add(new DeviceProgressViewModel(device.Id)
+            {
+                Percentage = 0,
+                OperationName = OperationName(operation),
+                Details = "0%"
+            });
         }
         SpeedSeries = new Dictionary<string, IReadOnlyList<double>>();
         _operationCancellation = new CancellationTokenSource();
@@ -371,52 +378,74 @@ internal sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var key = value.DeviceId ?? "Operation";
-        if (value.DeviceId is null && _deviceFractions.Count > 0)
+        if (_progressOperation != value.Operation)
         {
+            _progressOperation = value.Operation;
+            _latestDeviceProgress.Clear();
             foreach (var deviceId in _deviceFractions.Keys.ToArray())
             {
-                _deviceFractions[deviceId] = Math.Max(_deviceFractions[deviceId], value.Fraction);
-                _latestDeviceProgress[deviceId] = value;
+                _deviceFractions[deviceId] = 0;
             }
         }
-        else
+
+        var targetIds = value.DeviceId is null && _deviceFractions.Count > 0
+            ? _deviceFractions.Keys.ToArray()
+            : [value.DeviceId ?? "Operation"];
+        foreach (var deviceId in targetIds)
         {
-            _deviceFractions[key] = Math.Max(_deviceFractions.GetValueOrDefault(key), value.Fraction);
-            _latestDeviceProgress[key] = value;
+            _deviceFractions[deviceId] = Math.Max(_deviceFractions.GetValueOrDefault(deviceId), value.Fraction);
+            _latestDeviceProgress[deviceId] = value;
         }
 
         _overallFraction = _deviceFractions.Count == 0 ? value.Fraction : _deviceFractions.Values.Min();
-        var totalSpeed = _latestDeviceProgress.Values.Where(item => item.Fraction < 1).Sum(item => item.BytesPerSecond);
-        var overallRemaining = _latestDeviceProgress.Values.Select(item => item.Remaining).Where(item => item.HasValue).Select(item => item!.Value).DefaultIfEmpty().Max();
+        var totalSpeed = value.DeviceId is null
+            ? value.Fraction < 1 ? value.BytesPerSecond : 0
+            : _latestDeviceProgress.Values.Where(item => item.Fraction < 1).Sum(item => item.BytesPerSecond);
+        var overallRemaining = value.DeviceId is null
+            ? value.Remaining ?? TimeSpan.Zero
+            : _latestDeviceProgress.Values.Select(item => item.Remaining).Where(item => item.HasValue).Select(item => item!.Value).DefaultIfEmpty().Max();
         var overallBytes = (long)Math.Round(_overallFraction * value.TotalBytes);
         _lastProgress = value with { BytesProcessed = overallBytes, BytesPerSecond = totalSpeed, Remaining = overallRemaining };
         RaisePropertyChanged(nameof(WindowTitle));
         Progress = _overallFraction * 100;
         var remaining = overallRemaining > TimeSpan.Zero ? $" • {overallRemaining:hh\\:mm\\:ss} {Localizer.Get("RemainingLabel")}" : string.Empty;
-        var overallStage = _overallFraction >= 1 ? Localizer.Get("CompleteStage") : Localizer.Get("TransferStage");
+        var operationName = OperationName(value.Operation);
+        var overallStage = _overallFraction >= 1 ? $"{operationName} — {Localizer.Get("CompleteStage")}" : operationName;
         ProgressText = $"{overallStage} • {_overallFraction:P0} • {ByteSize.Format(overallBytes)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)totalSpeed)}/s{remaining}";
 
-        var item = DeviceProgress.FirstOrDefault(candidate => candidate.DeviceId == key);
-        if (item is null)
-        {
-            item = new DeviceProgressViewModel(key);
-            DeviceProgress.Add(item);
-        }
-        item.Percentage = value.Fraction * 100;
-        item.Details = $"{value.Fraction:P0} • {ByteSize.Format((long)value.BytesPerSecond)}/s";
-
         var updated = SpeedSeries.ToDictionary(pair => pair.Key, pair => pair.Value.ToList(), StringComparer.Ordinal);
-        var samples = updated.TryGetValue(key, out var existing) ? existing : [];
-        samples.Add(value.BytesPerSecond);
-        if (samples.Count > 90)
+        foreach (var deviceId in targetIds)
         {
-            samples.RemoveAt(0);
-        }
+            var item = DeviceProgress.FirstOrDefault(candidate => candidate.DeviceId == deviceId);
+            if (item is null)
+            {
+                item = new DeviceProgressViewModel(deviceId);
+                DeviceProgress.Add(item);
+            }
+            item.OperationName = operationName;
+            item.Percentage = value.Fraction * 100;
+            item.Details = $"{value.Fraction:P0} • {ByteSize.Format((long)value.BytesPerSecond)}/s";
 
-        updated[key] = samples;
+            var samples = updated.TryGetValue(deviceId, out var existing) ? existing : [];
+            samples.Add(value.Fraction < 1 ? value.BytesPerSecond : 0);
+            if (samples.Count > 90)
+            {
+                samples.RemoveAt(0);
+            }
+
+            updated[deviceId] = samples;
+        }
         SpeedSeries = updated.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<double>)pair.Value, StringComparer.Ordinal);
     }
+
+    private static string OperationName(ImagingOperation operation) => operation switch
+    {
+        ImagingOperation.Read => Localizer.Get("ReadDevice"),
+        ImagingOperation.Write => Localizer.Get("WriteImage"),
+        ImagingOperation.Verify => Localizer.Get("Verify"),
+        ImagingOperation.Wipe => Localizer.Get("QuickWipe"),
+        _ => operation.ToString()
+    };
 
     private void Validate(ImagingOperation operation)
     {
