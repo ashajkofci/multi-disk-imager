@@ -31,10 +31,12 @@ internal sealed partial class MainWindow : Window
 
     private async void OnBrowse(object? sender, RoutedEventArgs e)
     {
+        var suggestedFolder = await GetSuggestedFolderAsync();
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Select raw disk image",
             AllowMultiple = false,
+            SuggestedStartLocation = suggestedFolder,
             FileTypeFilter =
             [
                 new FilePickerFileType("Raw disk image") { Patterns = ["*.img", "*.raw", "*.bin"] },
@@ -45,6 +47,7 @@ internal sealed partial class MainWindow : Window
         if (file is not null)
         {
             ViewModel.ImagePath = file.TryGetLocalPath() ?? file.Path.LocalPath;
+            await ViewModel.RememberImageFolderAsync(ViewModel.ImagePath);
         }
     }
 
@@ -77,6 +80,7 @@ internal sealed partial class MainWindow : Window
                 var output = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
                     Title = "Save raw disk image",
+                    SuggestedStartLocation = await GetSuggestedFolderAsync(),
                     SuggestedFileName = "disk.img",
                     DefaultExtension = "img",
                     FileTypeChoices = [new FilePickerFileType("Raw disk image") { Patterns = ["*.img"] }]
@@ -87,6 +91,7 @@ internal sealed partial class MainWindow : Window
                 }
 
                 ViewModel.ImagePath = output.TryGetLocalPath() ?? output.Path.LocalPath;
+                await ViewModel.RememberImageFolderAsync(ViewModel.ImagePath);
             }
 
             var selected = ViewModel.SelectedDevices;
@@ -224,4 +229,14 @@ internal sealed partial class MainWindow : Window
 
     private Task<bool> ShowErrorAsync(string title, string message) =>
         new MessageDialog(title, message, "Close", cancelVisible: false).ShowDialog<bool>(this);
+
+    private async Task<IStorageFolder?> GetSuggestedFolderAsync()
+    {
+        var settings = ViewModel.Settings;
+        var candidates = settings.UseUserSpecifiedFolder
+            ? new[] { settings.UserSpecifiedFolder }.Concat(settings.CustomPlaces).Append(settings.LastFolderPath)
+            : new[] { settings.LastFolderPath }.Concat(settings.CustomPlaces).Append(settings.UserSpecifiedFolder);
+        var path = candidates.FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate) && Directory.Exists(candidate));
+        return path is null ? null : await StorageProvider.TryGetFolderFromPathAsync(new Uri(Path.GetFullPath(path)));
+    }
 }

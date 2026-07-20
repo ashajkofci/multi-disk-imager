@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MultiDiskImager.Views.SettingsWindow"
-        Width="560" Height="650" CanResize="False"
+        Width="560" Height="760" CanResize="False"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
         Title="Settings">
   <Grid RowDefinitions="*,Auto" Margin="20" RowSpacing="16">
@@ -15,6 +15,16 @@
         <CheckBox x:Name="AutoSelect" Content="Automatically select a single eligible device" />
         <CheckBox x:Name="AutoClose" Content="Close after a fully successful operation" />
         <CheckBox x:Name="AlwaysOnTop" Content="Keep the main window on top" />
+
+        <Separator />
+        <TextBlock Text="File picker" FontSize="20" FontWeight="SemiBold" />
+        <CheckBox x:Name="UseCustomFolder" Content="Start in a user-specified folder" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <TextBox x:Name="CustomFolder" PlaceholderText="Folder path" />
+          <Button Grid.Column="1" Content="Browse…" Click="OnBrowseFolder" />
+        </Grid>
+        <TextBlock Text="Custom places (one folder per line)" />
+        <TextBox x:Name="CustomPlaces" AcceptsReturn="True" Height="76" TextWrapping="NoWrap" />
 
         <Separator />
         <TextBlock Text="Device safety filters" FontSize="20" FontWeight="SemiBold" />

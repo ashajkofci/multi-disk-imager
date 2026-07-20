@@ -312,6 +312,19 @@ internal sealed class MainWindowViewModel : ObservableObject
         await RefreshDevicesAsync().ConfigureAwait(false);
     }
 
+    public async Task RememberImageFolderAsync(string imagePath)
+    {
+        var folder = Path.GetDirectoryName(Path.GetFullPath(imagePath));
+        if (string.IsNullOrWhiteSpace(folder) || string.Equals(folder, _settings.LastFolderPath, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _settings = _settings with { LastFolderPath = folder };
+        RaisePropertyChanged(nameof(Settings));
+        await _settingsStore.SaveAsync(_settings).ConfigureAwait(false);
+    }
+
     public async Task CheckForUpdatesAsync()
     {
         try

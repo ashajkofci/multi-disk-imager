@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using MultiDiskImager.Services;
 
 namespace MultiDiskImager.Views;
@@ -20,11 +21,14 @@ internal sealed partial class SettingsWindow : Window
         Check("AutoSelect", settings.AutoSelectSingleDevice);
         Check("AutoClose", settings.AutoCloseOnSuccess);
         Check("AlwaysOnTop", settings.AlwaysOnTop);
+        Check("UseCustomFolder", settings.UseUserSpecifiedFolder);
         Check("ShowExternalHardDrives", settings.ShowExternalHardDrives);
         Check("LimitSize", settings.OmitDrivesOverSize);
         this.FindControl<NumericUpDown>("LimitGiB")!.Value = (decimal)settings.OmitDrivesThresholdGiB;
         this.FindControl<ComboBox>("ThemeChoice")!.SelectedIndex = (int)settings.Theme;
         this.FindControl<ComboBox>("TitleExtra")!.SelectedIndex = (int)settings.TitleExtra;
+        this.FindControl<TextBox>("CustomFolder")!.Text = settings.UserSpecifiedFolder;
+        this.FindControl<TextBox>("CustomPlaces")!.Text = string.Join(Environment.NewLine, settings.CustomPlaces);
     }
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
@@ -42,6 +46,12 @@ internal sealed partial class SettingsWindow : Window
             AutoSelectSingleDevice = Checked("AutoSelect"),
             AutoCloseOnSuccess = Checked("AutoClose"),
             AlwaysOnTop = Checked("AlwaysOnTop"),
+            UseUserSpecifiedFolder = Checked("UseCustomFolder"),
+            UserSpecifiedFolder = this.FindControl<TextBox>("CustomFolder")!.Text?.Trim(),
+            CustomPlaces = (this.FindControl<TextBox>("CustomPlaces")!.Text ?? string.Empty)
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
             ShowExternalHardDrives = Checked("ShowExternalHardDrives"),
             OmitDrivesOverSize = Checked("LimitSize"),
             OmitDrivesThresholdGiB = (double)(this.FindControl<NumericUpDown>("LimitGiB")!.Value ?? 128),
@@ -52,4 +62,19 @@ internal sealed partial class SettingsWindow : Window
     }
 
     private void OnCancel(object? sender, RoutedEventArgs e) => Close(null);
+
+    private async void OnBrowseFolder(object? sender, RoutedEventArgs e)
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new Avalonia.Platform.Storage.FolderPickerOpenOptions
+        {
+            Title = "Select default image folder",
+            AllowMultiple = false
+        });
+        var folder = folders.FirstOrDefault();
+        if (folder is not null)
+        {
+            this.FindControl<TextBox>("CustomFolder")!.Text = folder.TryGetLocalPath() ?? folder.Path.LocalPath;
+            Check("UseCustomFolder", true);
+        }
+    }
 }

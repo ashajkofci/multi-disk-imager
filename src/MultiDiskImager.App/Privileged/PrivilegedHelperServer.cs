@@ -204,6 +204,14 @@ internal static class PrivilegedHelperServer
     {
         await using var image = new FileStream(request.ImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
         var byteCount = request.ByteCount ?? Math.Min(image.Length, devices.Min(device => device.Size));
+        if (request.OnlyAllocated)
+        {
+            var sectorSize = devices.Max(device => device.LogicalSectorSize);
+            var layout = await PartitionTableParser.ParseAsync(image, image.Length, sectorSize, cancellationToken).ConfigureAwait(false);
+            byteCount = Math.Min(byteCount, layout.LastAllocatedByte);
+            image.Position = 0;
+        }
+
         return await new ImagingEngine().VerifyDevicesAsync(image, streams, byteCount, progress, cancellationToken).ConfigureAwait(false);
     }
 
