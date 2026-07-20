@@ -173,7 +173,7 @@ internal sealed partial class MainWindow : Window
     {
         await new MessageDialog(
             "About Multi Disk Imager",
-            $"Multi Disk Imager {Services.UpdateService.CurrentVersion}{Environment.NewLine}{Environment.NewLine}" +
+            $"Multi Disk Imager {Services.UpdateService.CurrentVersionText}{Environment.NewLine}{Environment.NewLine}" +
             "A cross-platform raw disk imaging utility. Images are byte-for-byte data without compression or encryption. Licensed under the MIT License.",
             "Close",
             cancelVisible: false).ShowDialog<bool>(this);

@@ -29,7 +29,7 @@ internal static class Program
 
         if (options.ShowVersion)
         {
-            Console.WriteLine(Services.UpdateService.CurrentVersion);
+            Console.WriteLine(Services.UpdateService.CurrentVersionText);
             return 0;
         }
 
@@ -54,4 +54,3 @@ internal static class Program
             .WithInterFont()
             .LogToTrace();
 }
-

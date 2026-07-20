@@ -52,7 +52,7 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
-      - run: dotnet restore src/MultiDiskImager.App/MultiDiskImager.App.csproj --runtime ${{ matrix.rid }} --locked-mode
+      - run: dotnet restore src/MultiDiskImager.App/MultiDiskImager.App.csproj --locked-mode
       - name: Publish self-contained single file
         shell: bash
         run: >-
