@@ -118,7 +118,7 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
             {
                 await stream.WriteAsync(chunk.Buffer.AsMemory(0, chunk.WriteLength), cancellationToken).ConfigureAwait(false);
                 processed += chunk.SourceLength;
-                if (progress is not null && (stopwatch.Elapsed - lastReport >= TimeSpan.FromMilliseconds(200) || processed >= total))
+                if (progress is not null && (stopwatch.Elapsed - lastReport >= TimeSpan.FromMilliseconds(250) || processed >= total))
                 {
                     lastReport = stopwatch.Elapsed;
                     var speed = stopwatch.Elapsed.TotalSeconds <= 0 ? 0 : processed / stopwatch.Elapsed.TotalSeconds;

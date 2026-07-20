@@ -29,6 +29,9 @@ internal sealed class MainWindowViewModel : ObservableObject
     private double _progress;
     private string _progressText = string.Empty;
     private IReadOnlyDictionary<string, IReadOnlyList<double>> _speedSeries = new Dictionary<string, IReadOnlyList<double>>();
+    private readonly Dictionary<string, double> _deviceFractions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ImagingProgress> _latestDeviceProgress = new(StringComparer.Ordinal);
+    private double _overallFraction;
     private UpdateInfo? _availableUpdate;
     private ImagingProgress? _lastProgress;
 
@@ -142,7 +145,7 @@ internal sealed class MainWindowViewModel : ObservableObject
     public bool HasAvailableUpdate => AvailableUpdate is not null;
     public string WindowTitle => _settings.TitleExtra switch
     {
-        TitleExtra.Percent when _lastProgress is not null => $"{_lastProgress.Fraction:P0} — {ProductName}",
+        TitleExtra.Percent when _lastProgress is not null => $"{_overallFraction:P0} — {ProductName}",
         TitleExtra.CurrentSpeed when _lastProgress is not null => $"{ByteSize.Format((long)_lastProgress.BytesPerSecond)}/s — {ProductName}",
         TitleExtra.RemainingTime when _lastProgress?.Remaining is { } remaining => $"{remaining:hh\\:mm\\:ss} — {ProductName}",
         TitleExtra.ActiveDevice when SelectedDevices.FirstOrDefault() is { } device => $"{device.Id} — {ProductName}",
@@ -224,10 +227,18 @@ internal sealed class MainWindowViewModel : ObservableObject
         RaisePropertyChanged(nameof(WindowTitle));
         ProgressText = Localizer.Get("Preparing");
         Checksum = string.Empty;
+        var selected = SelectedDevices;
         DeviceProgress.Clear();
+        _deviceFractions.Clear();
+        _latestDeviceProgress.Clear();
+        _overallFraction = 0;
+        foreach (var device in selected)
+        {
+            _deviceFractions[device.Id] = 0;
+            DeviceProgress.Add(new DeviceProgressViewModel(device.Id) { Percentage = 0, Details = "0%" });
+        }
         SpeedSeries = new Dictionary<string, IReadOnlyList<double>>();
         _operationCancellation = new CancellationTokenSource();
-        var selected = SelectedDevices;
 
         try
         {
@@ -360,12 +371,32 @@ internal sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
-        _lastProgress = value;
-        RaisePropertyChanged(nameof(WindowTitle));
-        Progress = value.Fraction * 100;
-        var remaining = value.Remaining is { } duration && duration > TimeSpan.Zero ? $" • {duration:hh\\:mm\\:ss} remaining" : string.Empty;
-        ProgressText = $"{value.Stage} • {value.Fraction:P0} • {ByteSize.Format(value.BytesProcessed)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)value.BytesPerSecond)}/s{remaining}";
         var key = value.DeviceId ?? "Operation";
+        if (value.DeviceId is null && _deviceFractions.Count > 0)
+        {
+            foreach (var deviceId in _deviceFractions.Keys.ToArray())
+            {
+                _deviceFractions[deviceId] = Math.Max(_deviceFractions[deviceId], value.Fraction);
+                _latestDeviceProgress[deviceId] = value;
+            }
+        }
+        else
+        {
+            _deviceFractions[key] = Math.Max(_deviceFractions.GetValueOrDefault(key), value.Fraction);
+            _latestDeviceProgress[key] = value;
+        }
+
+        _overallFraction = _deviceFractions.Count == 0 ? value.Fraction : _deviceFractions.Values.Min();
+        var totalSpeed = _latestDeviceProgress.Values.Sum(item => item.BytesPerSecond);
+        var overallRemaining = _latestDeviceProgress.Values.Select(item => item.Remaining).Where(item => item.HasValue).Select(item => item!.Value).DefaultIfEmpty().Max();
+        var overallBytes = (long)Math.Round(_overallFraction * value.TotalBytes);
+        _lastProgress = value with { BytesProcessed = overallBytes, BytesPerSecond = totalSpeed, Remaining = overallRemaining };
+        RaisePropertyChanged(nameof(WindowTitle));
+        Progress = _overallFraction * 100;
+        var remaining = overallRemaining > TimeSpan.Zero ? $" • {overallRemaining:hh\\:mm\\:ss} remaining" : string.Empty;
+        var overallStage = _overallFraction >= 1 ? "Complete" : value.Stage == "Complete" ? "Transferring" : value.Stage;
+        ProgressText = $"{overallStage} • {_overallFraction:P0} • {ByteSize.Format(overallBytes)} / {ByteSize.Format(value.TotalBytes)} • {ByteSize.Format((long)totalSpeed)}/s{remaining}";
+
         var item = DeviceProgress.FirstOrDefault(candidate => candidate.DeviceId == key);
         if (item is null)
         {
