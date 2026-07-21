@@ -395,6 +395,7 @@ internal sealed class MainWindowViewModel : ObservableObject
         {
             _progressOperation = value.Operation;
             _latestDeviceProgress.Clear();
+            SpeedSeries = new Dictionary<string, IReadOnlyList<double>>();
             foreach (var deviceId in _deviceFractions.Keys.ToArray())
             {
                 _deviceFractions[deviceId] = 0;
@@ -443,12 +444,10 @@ internal sealed class MainWindowViewModel : ObservableObject
                 ? value.Stage
                 : $"{value.Fraction:P0} • {ByteSize.Format((long)value.BytesPerSecond)}/s";
 
-            var samples = updated.TryGetValue(deviceId, out var existing) ? existing : [];
-            samples.Add(value.Fraction < 1 ? value.BytesPerSecond : 0);
-            if (samples.Count > 90)
-            {
-                samples.RemoveAt(0);
-            }
+            var samples = updated.TryGetValue(deviceId, out var existing)
+                ? existing
+                : Enumerable.Repeat(double.NaN, 101).ToList();
+            samples[Math.Clamp((int)Math.Round(value.Fraction * 100), 0, 100)] = value.Fraction < 1 ? value.BytesPerSecond : 0;
 
             updated[deviceId] = samples;
         }

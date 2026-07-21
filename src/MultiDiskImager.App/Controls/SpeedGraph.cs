@@ -30,17 +30,27 @@ internal sealed class SpeedGraph : Control
             return;
         }
 
-        var maximum = Math.Max(1, Series.Values.SelectMany(samples => samples).DefaultIfEmpty().Max());
+        var maximum = Math.Max(1, Series.Values.SelectMany(samples => samples).Where(double.IsFinite).DefaultIfEmpty().Max());
         var colors = new[] { "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4" };
         var seriesIndex = 0;
         foreach (var samples in Series.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => pair.Value))
         {
             var pen = new Pen(new SolidColorBrush(Color.Parse(colors[seriesIndex++ % colors.Length])), 2);
-            for (var index = 1; index < samples.Count; index++)
+            Point? previous = null;
+            for (var index = 0; index < samples.Count; index++)
             {
-                var previous = new Point((index - 1) * bounds.Width / Math.Max(1, samples.Count - 1), bounds.Height - samples[index - 1] / maximum * (bounds.Height - 8) - 4);
+                if (!double.IsFinite(samples[index]))
+                {
+                    continue;
+                }
+
                 var current = new Point(index * bounds.Width / Math.Max(1, samples.Count - 1), bounds.Height - samples[index] / maximum * (bounds.Height - 8) - 4);
-                context.DrawLine(pen, previous, current);
+                if (previous is { } point)
+                {
+                    context.DrawLine(pen, point, current);
+                }
+
+                previous = current;
             }
         }
     }
