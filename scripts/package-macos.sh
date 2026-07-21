@@ -67,6 +67,7 @@ DOTNET_BUNDLE_EXTRACT_BASE_DIR="$dmg_root/.bundle-extract" "$app_dir/Contents/Ma
 rm -R "$dmg_root/.bundle-extract" 2>/dev/null || true
 
 dmg="$output_dir/bnovate-multi-disk-imager-$version-macos-$arch.dmg"
+mkdir -p "$output_dir"
 ln -s /Applications "$dmg_root/Applications"
 dmg_size_kb=$(( $(du -sk "$dmg_root" | cut -f1) + 32 * 1024 ))
 hdiutil create -size "${dmg_size_kb}k" -volname "bNovate Multi Disk Imager" -srcfolder "$dmg_root" -ov -format UDZO "$dmg"
