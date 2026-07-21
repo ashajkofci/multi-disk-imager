@@ -70,7 +70,7 @@ public static class Localizer
     private static readonly IReadOnlyDictionary<string, string[]> Catalogs = new Dictionary<string, string[]>
     {
         ["en"] = Lines("""
-            Write one raw image to multiple disks — safely and in parallel
+            Write one raw image to multiple disks - safely and in parallel
             Settings
             About
             A newer version is available from GitHub Releases.
@@ -131,7 +131,7 @@ public static class Localizer
             Author
             """),
         ["fr"] = Lines("""
-            Écrivez une image brute sur plusieurs disques — en toute sécurité et en parallèle
+            Écrivez une image brute sur plusieurs disques - en toute sécurité et en parallèle
             Paramètres
             À propos
             Une nouvelle version est disponible sur GitHub Releases.
@@ -253,7 +253,7 @@ public static class Localizer
             Autor
             """),
         ["it"] = Lines("""
-            Scrivi un’immagine raw su più dischi — in sicurezza e in parallelo
+            Scrivi un’immagine raw su più dischi - in sicurezza e in parallelo
             Impostazioni
             Informazioni
             È disponibile una nuova versione su GitHub Releases.
@@ -314,7 +314,7 @@ public static class Localizer
             Autore
             """),
         ["es"] = Lines("""
-            Escriba una imagen sin procesar en varios discos — de forma segura y en paralelo
+            Escriba una imagen sin procesar en varios discos - de forma segura y en paralelo
             Configuración
             Acerca de
             Hay una versión nueva disponible en GitHub Releases.
@@ -375,7 +375,7 @@ public static class Localizer
             Autor
             """),
         ["pt"] = Lines("""
-            Grave uma imagem bruta em vários discos — com segurança e em paralelo
+            Grave uma imagem bruta em vários discos - com segurança e em paralelo
             Definições
             Acerca de
             Está disponível uma versão mais recente no GitHub Releases.
@@ -497,7 +497,7 @@ public static class Localizer
             Auteur
             """),
         ["pl"] = Lines("""
-            Zapisuj jeden surowy obraz na wiele dysków — bezpiecznie i równolegle
+            Zapisuj jeden surowy obraz na wiele dysków - bezpiecznie i równolegle
             Ustawienia
             Informacje
             Nowsza wersja jest dostępna w GitHub Releases.
