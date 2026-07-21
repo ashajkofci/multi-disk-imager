@@ -32,7 +32,7 @@
     </Border>
 
     <ScrollViewer Grid.Row="2">
-      <StackPanel Spacing="12">
+      <StackPanel Spacing="8">
         <Border Classes="card">
           <StackPanel Spacing="8">
             <TextBlock Text="{loc:Tr RawImage}" FontSize="17" FontWeight="SemiBold" />

@@ -10,8 +10,11 @@ publish_dir="$1"
 version="$2"
 arch="$3"
 output_dir="$4"
-app_dir="$output_dir/bNovate Multi Disk Imager.app"
+dmg_root="$(mktemp -d)"
+app_dir="$dmg_root/bNovate Multi Disk Imager.app"
 executable="$publish_dir/MultiDiskImager"
+iconset="$dmg_root/AppIcon.iconset"
+trap 'rm -Rf "$dmg_root"' EXIT
 
 case "$arch" in
   x64) expected_arch="x86_64" ;;
@@ -30,15 +33,14 @@ if ! lipo -archs "$executable" | tr ' ' '\n' | grep -Fxq "$expected_arch"; then
   exit 1
 fi
 
-DOTNET_BUNDLE_EXTRACT_BASE_DIR="$output_dir/.bundle-extract" "$executable" --version >/dev/null
-rm -R "$output_dir/.bundle-extract" 2>/dev/null || true
+DOTNET_BUNDLE_EXTRACT_BASE_DIR="$dmg_root/.bundle-extract" "$executable" --version >/dev/null
+rm -R "$dmg_root/.bundle-extract" 2>/dev/null || true
 
 mkdir -p "$app_dir/Contents/MacOS"
 mkdir -p "$app_dir/Contents/Resources"
 sed "s/__VERSION__/$version/g" packaging/macos/Info.plist.template > "$app_dir/Contents/Info.plist"
 cp "$executable" "$app_dir/Contents/MacOS/MultiDiskImager"
 
-iconset="$output_dir/AppIcon.iconset"
 mkdir -p "$iconset"
 for icon in \
   'icon_16x16.png:16' 'icon_16x16@2x.png:32' \
@@ -61,10 +63,12 @@ plutil -lint "$app_dir/Contents/Info.plist" >/dev/null
 codesign --force --sign - "$app_dir/Contents/MacOS/MultiDiskImager"
 codesign --force --sign - "$app_dir"
 codesign --verify --deep --strict --verbose=2 "$app_dir"
-DOTNET_BUNDLE_EXTRACT_BASE_DIR="$output_dir/.bundle-extract" "$app_dir/Contents/MacOS/MultiDiskImager" --version >/dev/null
-rm -R "$output_dir/.bundle-extract" 2>/dev/null || true
+DOTNET_BUNDLE_EXTRACT_BASE_DIR="$dmg_root/.bundle-extract" "$app_dir/Contents/MacOS/MultiDiskImager" --version >/dev/null
+rm -R "$dmg_root/.bundle-extract" 2>/dev/null || true
 
-archive="$output_dir/bnovate-multi-disk-imager-$version-macos-$arch.zip"
-ditto -c -k --sequesterRsrc --keepParent "$app_dir" "$archive"
-rm -R "$app_dir"
-echo "$archive"
+dmg="$output_dir/bnovate-multi-disk-imager-$version-macos-$arch.dmg"
+ln -s /Applications "$dmg_root/Applications"
+dmg_size_kb=$(( $(du -sk "$dmg_root" | cut -f1) + 32 * 1024 ))
+hdiutil create -size "${dmg_size_kb}k" -volname "bNovate Multi Disk Imager" -srcfolder "$dmg_root" -ov -format UDZO "$dmg"
+hdiutil verify "$dmg"
+echo "$dmg"

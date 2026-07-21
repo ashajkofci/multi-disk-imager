@@ -27,12 +27,12 @@ The system disk is never offered as a target. Writes and wipes require administr
 SemVer releases publish self-contained builds for:
 
 - Windows 10+ x64: an unsigned Setup `.exe`, portable `.exe`, and `.msix` package.
-- macOS 12+ Intel: a zipped `.app`.
-- macOS 12+ Apple Silicon: a zipped `.app`.
+- macOS 12+ Intel: a `.dmg` containing the app.
+- macOS 12+ Apple Silicon: a `.dmg` containing the app.
 - Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
 - Ubuntu 22.04+ ARM64: a self-contained executable in a `.tar.gz` archive.
 
-The release artifacts do not use commercial signing identities. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. The macOS app has an ad-hoc signature so both Intel and Apple Silicon bundles are structurally valid. Move it to Applications, Control-click it in Finder, and choose **Open**. If macOS still blocks it, open **System Settings → Privacy & Security** and choose **Open Anyway** for the app. Administrator approval is requested only when raw-device access begins.
+The release artifacts do not use commercial signing identities. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. The macOS app has an ad-hoc signature so both Intel and Apple Silicon bundles are structurally valid. Open the DMG, drag the app to Applications, then Control-click it in Finder and choose **Open**. If macOS still blocks it, open **System Settings → Privacy & Security** and choose **Open Anyway** for the app. Administrator approval is requested only when raw-device access begins.
 
 On Windows, the Setup `.exe` is the easiest option: it installs the app under Program Files and creates Start Menu and uninstall entries, with an optional desktop shortcut. The portable `.exe` runs without installation. The pipeline also produces an unsigned `.msix` for enterprise or downstream distribution workflows; Windows requires that package to be signed before normal App Installer installation. All variants contain the .NET runtime and native dependencies.
 

@@ -457,9 +457,9 @@ internal sealed class MainWindowViewModel : ObservableObject
 
     private static string OperationName(ImagingOperation operation) => operation switch
     {
-        ImagingOperation.Read => Localizer.Get("ReadDevice"),
-        ImagingOperation.Write => Localizer.Get("WriteImage"),
-        ImagingOperation.Verify => Localizer.Get("Verify"),
+        ImagingOperation.Read => Localizer.Get("OperationRead"),
+        ImagingOperation.Write => Localizer.Get("OperationWrite"),
+        ImagingOperation.Verify => Localizer.Get("OperationVerify"),
         ImagingOperation.Wipe => Localizer.Get("QuickWipe"),
         _ => operation.ToString()
     };

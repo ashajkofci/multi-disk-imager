@@ -15,7 +15,7 @@
         </StackPanel>
 
         <Border Classes="card">
-          <StackPanel Spacing="8">
+          <StackPanel Spacing="6">
             <TextBlock Text="{loc:Tr GettingStarted}" FontSize="18" FontWeight="SemiBold" />
             <TextBlock Text="{loc:Tr HelpStep1}" TextWrapping="Wrap" />
             <TextBlock Text="{loc:Tr HelpStep2}" TextWrapping="Wrap" />
@@ -52,7 +52,7 @@
         </StackPanel>
 
         <Border Classes="card">
-          <StackPanel Spacing="8">
+          <StackPanel Spacing="6">
             <TextBlock Text="{loc:Tr HelpOptionsTitle}" FontSize="18" FontWeight="SemiBold" />
             <TextBlock Text="{loc:Tr HelpOnlyAllocated}" TextWrapping="Wrap" />
             <TextBlock Text="{loc:Tr HelpVerifyAfter}" TextWrapping="Wrap" />
@@ -61,7 +61,7 @@
         </Border>
 
         <Border Classes="card" BorderBrush="#B91C1C">
-          <StackPanel Spacing="8">
+          <StackPanel Spacing="6">
             <TextBlock Text="{loc:Tr HelpSafetyTitle}" FontSize="18" FontWeight="SemiBold" Foreground="#DC2626" />
             <TextBlock Text="{loc:Tr HelpSafety}" TextWrapping="Wrap" />
             <TextBlock Text="{loc:Tr HelpAdmin}" TextWrapping="Wrap" />

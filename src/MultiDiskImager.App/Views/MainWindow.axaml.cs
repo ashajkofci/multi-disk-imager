@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -158,6 +159,16 @@ internal sealed partial class MainWindow : Window
             {
                 _allowClose = true;
                 Close();
+            }
+        }
+        catch (Exception exception) when (OperatingSystem.IsMacOS() && exception.Message.Contains("/dev/rdisk", StringComparison.Ordinal))
+        {
+            if (await ConfirmAsync(
+                    Localizer.Get("Settings"),
+                    Localizer.Get("FullDiskAccessMessage"),
+                    Localizer.Get("OpenSystemSettings")))
+            {
+                Process.Start(new ProcessStartInfo("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") { UseShellExecute = true });
             }
         }
         catch (Exception exception)
