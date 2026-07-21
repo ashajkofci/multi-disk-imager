@@ -305,13 +305,14 @@ internal sealed class MainWindowViewModel : ObservableObject
         _operationCancellation = new CancellationTokenSource();
         try
         {
-            await using var stream = new FileStream(ImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var imageSource = DiskImageSource.Open(ImagePath);
+            await using var stream = imageSource.OpenRead();
             var progress = new Progress<double>(value =>
             {
                 Progress = value * 100;
                 ProgressText = $"{Localizer.Get("Checksum")} {value:P0}";
             });
-            Checksum = await ChecksumService.ComputeAsync(stream, ChecksumAlgorithm, progress, _operationCancellation.Token);
+            Checksum = await ChecksumService.ComputeAsync(stream, ChecksumAlgorithm, progress, _operationCancellation.Token, imageSource.Length);
             Status = $"{ChecksumAlgorithm}: {Localizer.Get("Success")}";
         }
         finally
@@ -324,9 +325,12 @@ internal sealed class MainWindowViewModel : ObservableObject
 
     public async Task<bool> TailContainsDataAsync(long deviceSize)
     {
-        await using var image = new FileStream(ImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var imageSource = DiskImageSource.Open(ImagePath);
+        await using var image = imageSource.OpenRead();
         return await new ImagingEngine().TailContainsNonZeroAsync(image, deviceSize);
     }
+
+    public long GetImageSize() => DiskImageSource.Open(ImagePath).Length;
 
     public async Task ApplySettingsAsync(AppSettings settings)
     {

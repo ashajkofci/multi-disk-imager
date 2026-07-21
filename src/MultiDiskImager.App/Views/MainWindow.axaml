@@ -40,7 +40,6 @@
               <TextBox Text="{Binding ImagePath}" PlaceholderText="{loc:Tr ImagePlaceholder}" />
               <Button Grid.Column="1" Content="{loc:Tr Browse}" Click="OnBrowse" />
             </Grid>
-            <TextBlock Text="{loc:Tr NoMetadata}" FontSize="12" Opacity="0.65" />
           </StackPanel>
         </Border>
 

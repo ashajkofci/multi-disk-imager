@@ -14,7 +14,6 @@ public static class Localizer
         RawImage
         ImagePlaceholder
         Browse
-        NoMetadata
         Devices
         Refresh
         Info
@@ -76,9 +75,8 @@ public static class Localizer
             A newer version is available from GitHub Releases.
             View release
             Raw image
-            Choose or drop a byte-for-byte .img file
+            Choose or drop a raw .img file or a ZIP archive
             Browse…
-            No compression, encryption, headers, or proprietary metadata are added.
             Devices
             Refresh
             Info
@@ -137,9 +135,8 @@ public static class Localizer
             Une nouvelle version est disponible sur GitHub Releases.
             Voir la version
             Image brute
-            Choisissez ou déposez un fichier .img identique octet par octet
+            Choisissez ou déposez un fichier .img brut ou une archive ZIP
             Parcourir…
-            Aucune compression, chiffrement, en-tête ou métadonnée propriétaire n’est ajouté.
             Périphériques
             Actualiser
             Infos
@@ -198,9 +195,8 @@ public static class Localizer
             Eine neuere Version ist auf GitHub Releases verfügbar.
             Version anzeigen
             Rohabbild
-            Eine bytegenaue .img-Datei auswählen oder ablegen
+            Eine rohe .img-Datei oder ein ZIP-Archiv auswählen oder ablegen
             Durchsuchen…
-            Es werden keine Komprimierung, Verschlüsselung, Header oder proprietären Metadaten hinzugefügt.
             Datenträger
             Aktualisieren
             Info
@@ -259,9 +255,8 @@ public static class Localizer
             È disponibile una nuova versione su GitHub Releases.
             Visualizza versione
             Immagine raw
-            Scegli o trascina un file .img identico byte per byte
+            Scegli o trascina un file .img raw o un archivio ZIP
             Sfoglia…
-            Non vengono aggiunti compressione, crittografia, intestazioni o metadati proprietari.
             Dispositivi
             Aggiorna
             Info
@@ -320,9 +315,8 @@ public static class Localizer
             Hay una versión nueva disponible en GitHub Releases.
             Ver versión
             Imagen sin procesar
-            Elija o suelte un archivo .img idéntico byte por byte
+            Elija o suelte un archivo .img sin procesar o un archivo ZIP
             Examinar…
-            No se añaden compresión, cifrado, cabeceras ni metadatos propietarios.
             Dispositivos
             Actualizar
             Información
@@ -381,9 +375,8 @@ public static class Localizer
             Está disponível uma versão mais recente no GitHub Releases.
             Ver versão
             Imagem bruta
-            Escolha ou largue um ficheiro .img idêntico byte a byte
+            Escolha ou largue um ficheiro .img bruto ou um arquivo ZIP
             Procurar…
-            Não são adicionados compressão, encriptação, cabeçalhos ou metadados proprietários.
             Dispositivos
             Atualizar
             Informação
@@ -442,9 +435,8 @@ public static class Localizer
             Er is een nieuwere versie beschikbaar op GitHub Releases.
             Versie bekijken
             Onbewerkt beeld
-            Kies of sleep een byte-voor-byte identiek .img-bestand
+            Kies of sleep een onbewerkt .img-bestand of ZIP-archief
             Bladeren…
-            Er worden geen compressie, versleuteling, headers of bedrijfseigen metadata toegevoegd.
             Apparaten
             Vernieuwen
             Info
@@ -503,9 +495,8 @@ public static class Localizer
             Nowsza wersja jest dostępna w GitHub Releases.
             Zobacz wersję
             Surowy obraz
-            Wybierz lub upuść identyczny bajt w bajt plik .img
+            Wybierz lub upuść surowy plik .img albo archiwum ZIP
             Przeglądaj…
-            Nie są dodawane kompresja, szyfrowanie, nagłówki ani własnościowe metadane.
             Urządzenia
             Odśwież
             Informacje
@@ -564,9 +555,8 @@ public static class Localizer
             GitHub Releases 上有新版本可用。
             查看版本
             原始映像
-            选择或拖放逐字节一致的 .img 文件
+            选择或拖放原始 .img 文件或 ZIP 压缩包
             浏览…
-            不添加压缩、加密、标头或专有元数据。
             设备
             刷新
             信息
@@ -625,9 +615,8 @@ public static class Localizer
             GitHub Releasesに新しいバージョンがあります。
             リリースを表示
             RAWイメージ
-            バイト単位で同一の.imgファイルを選択またはドロップ
+            RAW .imgファイルまたはZIPアーカイブを選択またはドロップ
             参照…
-            圧縮、暗号化、ヘッダー、独自メタデータは追加されません。
             デバイス
             更新
             情報
@@ -738,7 +727,7 @@ public static class Localizer
 
     private static readonly IReadOnlyDictionary<string, string[]> HelpCatalogs = new Dictionary<string, string[]>
     {
-        ["en"] = Extra("Help|Help and quick start|Choose what you want to do, confirm the physical devices, and follow the progress without needing disk-imaging experience.|Getting started|1. Refresh the device list, then identify each physical drive by its model, capacity, and device ID. Use Info when you need more details.|2. Select the physical drive or drives. For writing or verification, also choose the raw image file at the top of the main window.|3. Choose an operation at the bottom of the window. Review every confirmation carefully before allowing access.|Operations|Creates a raw .img file from exactly one selected physical drive. If no output path is set, the app asks where to save it.|Copies the selected raw image to all selected drives in parallel. Existing data and partitions on those drives are overwritten.|Compares the image with the selected drives without changing them. A failed result includes the position of the first different byte.|Removes partition and filesystem metadata near the start and end of each selected drive. This is destructive, but it is not a secure full-disk erase.|Options and checks|Only allocated limits reading or verification to the end of the last detected MBR or GPT partition, which can save time and image space.|Verify after automatically compares the completed read or write with the physical drive before reporting success.|Calculate creates an MD5, SHA-1, or SHA-256 checksum for the selected image file. You can compare it with a trusted checksum to detect changes.|Before you continue|Writing and quick wiping destroy data. Confirm the model, capacity, and device ID of every selected drive. The system disk is hidden for protection.|The operating system may ask for administrator approval only when raw access to a physical drive begins.|Canceling, disconnecting a drive, or losing power during a write can leave that drive incomplete or unusable until it is written again."),
+        ["en"] = Extra("Help|Help and quick start|Choose what you want to do, confirm the physical devices, and follow the progress without needing disk-imaging experience.|Getting started|1. Refresh the device list, then identify each physical drive by its model, capacity, and device ID. Use Info when you need more details.|2. Select the physical drive or drives. For writing or verification, also choose a raw image or ZIP archive at the top of the main window.|3. Choose an operation at the bottom of the window. Review every confirmation carefully before allowing access.|Operations|Creates a raw .img file from exactly one selected physical drive. If no output path is set, the app asks where to save it.|Copies the selected image to all selected drives in parallel. For a ZIP archive, the first .img entry is used. Existing data and partitions on those drives are overwritten.|Compares the image with the selected drives without changing them. A failed result includes the position of the first different byte.|Removes partition and filesystem metadata near the start and end of each selected drive. This is destructive, but it is not a secure full-disk erase.|Options and checks|Only allocated limits reading or verification to the end of the last detected MBR or GPT partition, which can save time and image space.|Verify after automatically compares the completed read or write with the physical drive before reporting success.|Calculate creates an MD5, SHA-1, or SHA-256 checksum for the selected image file. You can compare it with a trusted checksum to detect changes.|Before you continue|Writing and quick wiping destroy data. Confirm the model, capacity, and device ID of every selected drive. The system disk is hidden for protection.|The operating system may ask for administrator approval only when raw access to a physical drive begins.|Canceling, disconnecting a drive, or losing power during a write can leave that drive incomplete or unusable until it is written again."),
         ["fr"] = Extra("Aide|Aide et démarrage rapide|Choisissez l’opération à effectuer, vérifiez les périphériques physiques et suivez la progression sans avoir besoin d’expérience en imagerie disque.|Premiers pas|1. Actualisez la liste des périphériques, puis identifiez chaque disque physique par son modèle, sa capacité et son identifiant. Utilisez Infos pour plus de détails.|2. Sélectionnez le ou les disques physiques. Pour l’écriture ou la vérification, choisissez également le fichier image brute en haut de la fenêtre principale.|3. Choisissez une opération au bas de la fenêtre. Vérifiez attentivement chaque confirmation avant d’autoriser l’accès.|Opérations|Crée un fichier .img brut à partir d’un seul disque physique sélectionné. Si aucun chemin de sortie n’est défini, l’application demande où l’enregistrer.|Copie l’image brute sélectionnée sur tous les disques choisis en parallèle. Les données et partitions existantes sont écrasées.|Compare l’image aux disques sélectionnés sans les modifier. En cas d’échec, le résultat indique la position du premier octet différent.|Supprime les métadonnées de partition et de système de fichiers au début et à la fin de chaque disque sélectionné. Cette opération est destructive, mais ne constitue pas un effacement sécurisé du disque entier.|Options et contrôles|Lire jusqu’à la dernière partition allouée limite la lecture ou la vérification à la fin de la dernière partition MBR ou GPT détectée, ce qui peut gagner du temps et de l’espace.|Vérifier les données à la fin compare automatiquement la lecture ou l’écriture terminée au disque physique avant d’indiquer la réussite.|Calculer crée une somme de contrôle MD5, SHA-1 ou SHA-256 pour l’image sélectionnée. Comparez-la à une somme fiable pour détecter les modifications.|Avant de continuer|L’écriture et l’effacement rapide détruisent les données. Vérifiez le modèle, la capacité et l’identifiant de chaque disque sélectionné. Le disque système est masqué par sécurité.|Le système d’exploitation peut demander une autorisation d’administrateur uniquement lors du premier accès brut à un disque physique.|L’annulation, la déconnexion d’un disque ou une coupure de courant pendant l’écriture peut rendre ce disque incomplet ou inutilisable jusqu’à une nouvelle écriture."),
         ["de"] = Extra("Hilfe|Hilfe und Schnellstart|Wählen Sie die gewünschte Aktion, prüfen Sie die physischen Datenträger und verfolgen Sie den Fortschritt ohne Vorkenntnisse zur Datenträgerabbilderstellung.|Erste Schritte|1. Aktualisieren Sie die Datenträgerliste und identifizieren Sie jeden physischen Datenträger anhand von Modell, Kapazität und Geräte-ID. Weitere Angaben finden Sie unter Info.|2. Wählen Sie den oder die physischen Datenträger aus. Zum Schreiben oder Überprüfen wählen Sie zusätzlich oben im Hauptfenster die Rohabbilddatei aus.|3. Wählen Sie unten im Fenster eine Aktion. Prüfen Sie jede Bestätigung sorgfältig, bevor Sie den Zugriff erlauben.|Aktionen|Erstellt eine rohe .img-Datei von genau einem ausgewählten physischen Datenträger. Ist kein Ausgabepfad festgelegt, fragt die App nach dem Speicherort.|Kopiert das ausgewählte Rohabbild parallel auf alle ausgewählten Datenträger. Vorhandene Daten und Partitionen werden überschrieben.|Vergleicht das Abbild mit den ausgewählten Datenträgern, ohne sie zu verändern. Bei einem Fehler wird die Position des ersten abweichenden Bytes angegeben.|Entfernt Partitions- und Dateisystemmetadaten am Anfang und Ende jedes ausgewählten Datenträgers. Dies ist destruktiv, aber keine sichere Löschung des gesamten Datenträgers.|Optionen und Prüfungen|Nur bis zur letzten belegten Partition lesen begrenzt das Lesen oder Überprüfen auf das Ende der letzten erkannten MBR- oder GPT-Partition und kann so Zeit und Speicherplatz sparen.|Daten nach Abschluss überprüfen vergleicht den abgeschlossenen Lese- oder Schreibvorgang automatisch mit dem physischen Datenträger, bevor Erfolg gemeldet wird.|Berechnen erstellt eine MD5-, SHA-1- oder SHA-256-Prüfsumme für die ausgewählte Abbilddatei. Durch Vergleich mit einer vertrauenswürdigen Prüfsumme lassen sich Änderungen erkennen.|Bevor Sie fortfahren|Schreiben und Schnelllöschen zerstören Daten. Prüfen Sie Modell, Kapazität und Geräte-ID jedes ausgewählten Datenträgers. Der Systemdatenträger ist zum Schutz ausgeblendet.|Das Betriebssystem fordert möglicherweise erst beim Beginn des Rohzugriffs auf einen physischen Datenträger eine Administratorfreigabe an.|Abbrechen, Trennen eines Datenträgers oder Stromausfall während des Schreibens kann den Datenträger unvollständig oder unbrauchbar machen, bis er erneut beschrieben wird."),
         ["it"] = Extra("Aiuto|Aiuto e avvio rapido|Scegli l’operazione da eseguire, verifica i dispositivi fisici e segui l’avanzamento senza necessità di esperienza con le immagini disco.|Per iniziare|1. Aggiorna l’elenco dei dispositivi, quindi identifica ogni unità fisica tramite modello, capacità e ID dispositivo. Usa Info per maggiori dettagli.|2. Seleziona una o più unità fisiche. Per la scrittura o la verifica, scegli anche il file immagine raw nella parte superiore della finestra principale.|3. Scegli un’operazione nella parte inferiore della finestra. Controlla attentamente ogni conferma prima di consentire l’accesso.|Operazioni|Crea un file .img raw da una sola unità fisica selezionata. Se non è impostato un percorso di destinazione, l’app chiede dove salvarlo.|Copia in parallelo l’immagine raw selezionata su tutte le unità scelte. I dati e le partizioni esistenti vengono sovrascritti.|Confronta l’immagine con le unità selezionate senza modificarle. In caso di errore, il risultato include la posizione del primo byte diverso.|Rimuove i metadati delle partizioni e del file system all’inizio e alla fine di ogni unità selezionata. L’operazione è distruttiva, ma non è una cancellazione sicura dell’intero disco.|Opzioni e controlli|Leggi fino all’ultima partizione allocata limita la lettura o la verifica alla fine dell’ultima partizione MBR o GPT rilevata, risparmiando tempo e spazio.|Verifica i dati al termine confronta automaticamente la lettura o scrittura completata con l’unità fisica prima di segnalare il successo.|Calcola crea un checksum MD5, SHA-1 o SHA-256 per il file immagine selezionato. Puoi confrontarlo con un checksum attendibile per rilevare modifiche.|Prima di continuare|La scrittura e la cancellazione rapida distruggono i dati. Verifica modello, capacità e ID dispositivo di ogni unità selezionata. Il disco di sistema è nascosto per sicurezza.|Il sistema operativo può richiedere l’autorizzazione dell’amministratore solo quando inizia l’accesso raw a un’unità fisica.|L’annullamento, la disconnessione di un’unità o un’interruzione di corrente durante la scrittura possono lasciare l’unità incompleta o inutilizzabile finché non viene riscritta."),

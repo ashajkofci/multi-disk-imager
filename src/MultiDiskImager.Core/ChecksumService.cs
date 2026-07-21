@@ -16,7 +16,8 @@ public static class ChecksumService
         Stream stream,
         ChecksumAlgorithm algorithm,
         IProgress<double>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        long? totalLength = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
         if (!stream.CanRead)
@@ -34,7 +35,7 @@ public static class ChecksumService
 
         var buffer = ArrayPool<byte>.Shared.Rent(1024 * 1024);
         long processed = 0;
-        var total = stream.CanSeek ? stream.Length - stream.Position : 0;
+        var total = totalLength ?? (stream.CanSeek ? stream.Length - stream.Position : 0);
         try
         {
             int read;
@@ -57,4 +58,3 @@ public static class ChecksumService
         }
     }
 }
-

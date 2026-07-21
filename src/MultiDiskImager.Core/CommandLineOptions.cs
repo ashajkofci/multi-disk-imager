@@ -97,7 +97,7 @@ public sealed record CommandLineOptions(
                 case "-e":
                 case "-encryption":
                 case "--encryption":
-                    throw new ArgumentException($"{argument} is not supported. bNovate Multi Disk Imager uses raw, unencrypted .img files only.");
+                    throw new ArgumentException($"{argument} is not supported. ZIP archives may be selected as input, but images created by bNovate Multi Disk Imager are raw, unencrypted .img files.");
                 default:
                     if (!argument.StartsWith("-", StringComparison.Ordinal) && args.Count == 1)
                     {
@@ -123,8 +123,8 @@ public sealed record CommandLineOptions(
     public static string HelpText => """
         bNovate Multi Disk Imager
 
-        Usage: MultiDiskImager [image.img] [options]
-          -i, --image PATH          Select a raw image file
+        Usage: MultiDiskImager [image.img|image.zip] [options]
+          -i, --image PATH          Select a raw image or ZIP containing an .img
           -d, --device ID [...]    Select one or more platform device IDs
           -r, --read               Read one selected device to the image
           -w, --write              Write the image to selected devices
@@ -135,7 +135,8 @@ public sealed record CommandLineOptions(
               --list-devices       List detected physical devices and exit
           -h, --help               Show this help
 
-        Images are byte-for-byte raw disk data. Compression and encryption are not supported.
+        ZIP archives are accepted as input and use their first .img entry.
+        Images created by the application are byte-for-byte raw disk data.
         """;
 
     private static string RequireValue(IReadOnlyList<string> args, ref int index, string argument)

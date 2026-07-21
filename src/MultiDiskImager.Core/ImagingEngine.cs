@@ -239,20 +239,39 @@ public sealed class ImagingEngine(int bufferSize = 4 * 1024 * 1024)
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(image);
-        if (!image.CanSeek || !image.CanRead)
+        if (!image.CanRead)
         {
-            throw new ArgumentException("The image must be readable and seekable.", nameof(image));
+            throw new ArgumentException("The image must be readable.", nameof(image));
         }
 
-        if (offset < 0 || offset > image.Length)
+        if (offset < 0 || image.CanSeek && offset > image.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
 
-        image.Position = offset;
         var buffer = ArrayPool<byte>.Shared.Rent(_bufferSize);
         try
         {
+            if (image.CanSeek)
+            {
+                image.Position = offset;
+            }
+            else
+            {
+                long skipped = 0;
+                while (skipped < offset)
+                {
+                    var requested = (int)Math.Min(_bufferSize, offset - skipped);
+                    var skipRead = await image.ReadAsync(buffer.AsMemory(0, requested), cancellationToken).ConfigureAwait(false);
+                    if (skipRead == 0)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(offset));
+                    }
+
+                    skipped += skipRead;
+                }
+            }
+
             int read;
             while ((read = await image.ReadAsync(buffer.AsMemory(0, _bufferSize), cancellationToken).ConfigureAwait(false)) > 0)
             {

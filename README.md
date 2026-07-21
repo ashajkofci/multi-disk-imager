@@ -20,13 +20,14 @@
 
 - Write one image to multiple devices in parallel.
 - Read a physical device to a standard, byte-for-byte `.img` file.
+- Open raw images or ZIP archives; the first `.img` file in a ZIP is used.
 - Verify devices and report the first mismatching byte.
 - Calculate MD5, SHA-1, and SHA-256 checksums.
 - Read only through the last allocated MBR or GPT partition.
 - Track per-device progress, speed, throughput, and remaining time.
 - Quick-wipe partition and filesystem metadata.
 
-Images stay portable: the app adds no compression, encryption, headers, or proprietary metadata.
+Images created by the app stay portable: no compression, encryption, headers, or proprietary metadata are added.
 
 ## Safety
 
@@ -61,8 +62,8 @@ Windows and macOS releases are not commercially signed, so SmartScreen or Gateke
 <summary><strong>Command-line options</strong></summary>
 
 ```text
-MultiDiskImager [image.img] [options]
-  -i, -image, --image PATH       Select a raw image file
+MultiDiskImager [image.img|image.zip] [options]
+  -i, -image, --image PATH       Select a raw image or ZIP containing an .img
   -d, -device, --device ID ...  Select platform device IDs
   -r, -read, --read             Read one device to the image
   -w, -write, --write           Write the image to selected devices

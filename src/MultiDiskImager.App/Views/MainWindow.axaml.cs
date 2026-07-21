@@ -41,7 +41,7 @@ internal sealed partial class MainWindow : Window
             SuggestedStartLocation = suggestedFolder,
             FileTypeFilter =
             [
-                new FilePickerFileType(Localizer.Get("RawImage")) { Patterns = ["*.img", "*.raw", "*.bin"] },
+                new FilePickerFileType(Localizer.Get("RawImage")) { Patterns = ["*.img", "*.raw", "*.bin", "*.zip"] },
                 FilePickerFileTypes.All
             ]
         });
@@ -78,7 +78,8 @@ internal sealed partial class MainWindow : Window
     {
         try
         {
-            if (operation == ImagingOperation.Read && string.IsNullOrWhiteSpace(ViewModel.ImagePath))
+            if (operation == ImagingOperation.Read &&
+                (string.IsNullOrWhiteSpace(ViewModel.ImagePath) || DiskImageSource.IsZipPath(ViewModel.ImagePath)))
             {
                 var output = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
@@ -116,7 +117,7 @@ internal sealed partial class MainWindow : Window
 
             if (operation == ImagingOperation.Write)
             {
-                var imageSize = new FileInfo(ViewModel.ImagePath).Length;
+                var imageSize = ViewModel.GetImageSize();
                 var smallest = selected.Min(device => device.Size);
                 if (imageSize > smallest)
                 {

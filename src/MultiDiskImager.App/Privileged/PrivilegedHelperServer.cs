@@ -228,7 +228,8 @@ internal static class PrivilegedHelperServer
         IProgress<ImagingProgress> progress,
         CancellationToken cancellationToken)
     {
-        await using var image = new FileStream(request.ImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var imageSource = DiskImageSource.Open(request.ImagePath);
+        await using var image = imageSource.OpenSeekableRead();
         var smallest = devices.Min(device => device.Size);
         if (image.Length > smallest && !request.AllowCrop)
         {
@@ -270,7 +271,8 @@ internal static class PrivilegedHelperServer
         IProgress<ImagingProgress> progress,
         CancellationToken cancellationToken)
     {
-        await using var image = new FileStream(request.ImagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var imageSource = DiskImageSource.Open(request.ImagePath);
+        await using var image = imageSource.OpenSeekableRead();
         var byteCount = request.ByteCount ?? Math.Min(image.Length, devices.Min(device => device.Size));
         if (request.OnlyAllocated)
         {
