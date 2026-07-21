@@ -62,7 +62,7 @@ cat > "$package_dir/usr/share/applications/$package_name.desktop" <<EOF
 Type=Application
 Name=bNovate Multi Disk Imager
 Comment=Read, write, and verify raw disk images
-Exec=/usr/bin/$package_name %F
+Exec=/usr/bin/$package_name %f
 Icon=$package_name
 Terminal=false
 Categories=System;Utility;
