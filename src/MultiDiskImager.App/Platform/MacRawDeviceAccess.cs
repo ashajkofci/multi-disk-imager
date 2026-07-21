@@ -1,31 +1,23 @@
 using System.Runtime.Versioning;
 using MultiDiskImager.Core;
-using MultiDiskImager.Infrastructure;
 
 namespace MultiDiskImager.Platform;
+
+internal delegate Task MacDiskUnmountDelegate(string deviceId, CancellationToken cancellationToken);
 
 [SupportedOSPlatform("macos")]
 internal sealed class MacRawDeviceAccess : IRawDeviceAccess
 {
-    public async Task PrepareAsync(DeviceDescriptor device, bool writing, CancellationToken cancellationToken)
-    {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(30));
-        ProcessResult result;
-        try
-        {
-            result = await ProcessRunner.RunAsync(
-                "/usr/sbin/diskutil",
-                ["unmountDisk", "force", $"/dev/{device.Id}"],
-                timeout.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw new IOException($"Timed out while preparing {device.Id}. Close applications using the disk, reconnect it, and try again.");
-        }
+    private readonly MacDiskUnmountDelegate _unmountDisk;
 
-        result.EnsureSuccess($"Unmounting {device.Id}");
+    public MacRawDeviceAccess() : this(MacDiskArbitration.UnmountWholeDiskAsync)
+    {
     }
+
+    internal MacRawDeviceAccess(MacDiskUnmountDelegate unmountDisk) => _unmountDisk = unmountDisk;
+
+    public Task PrepareAsync(DeviceDescriptor device, bool writing, CancellationToken cancellationToken) =>
+        _unmountDisk(device.Id, cancellationToken);
 
     public Stream Open(DeviceDescriptor device, FileAccess access)
     {
@@ -39,15 +31,10 @@ internal sealed class MacRawDeviceAccess : IRawDeviceAccess
             FileOptions.Asynchronous | (access == FileAccess.Write || access == FileAccess.ReadWrite ? FileOptions.WriteThrough : FileOptions.None));
     }
 
-    public async Task RestoreAsync(DeviceDescriptor device, CancellationToken cancellationToken)
+    public Task RestoreAsync(DeviceDescriptor device, CancellationToken cancellationToken)
     {
-        var result = await ProcessRunner.RunAsync(
-            "/usr/sbin/diskutil",
-            ["mountDisk", $"/dev/{device.Id}"],
-            cancellationToken).ConfigureAwait(false);
-        if (result.ExitCode != 0 && !result.StandardError.Contains("no mountable file systems", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new IOException($"Unable to remount {device.Id}: {result.StandardError.Trim()}");
-        }
+        // Closing the raw device lets Disk Arbitration rescan the partition
+        // table and automatically remount any mountable volumes.
+        return Task.CompletedTask;
     }
 }

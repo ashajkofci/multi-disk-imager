@@ -98,6 +98,36 @@ public sealed class MacPlatformTests
         Assert.Equal(0, process.ExitCode);
     }
 
+    [Fact]
+    public async Task RawDevicePreparationUsesNativeWholeDiskUnmount()
+    {
+        string? unmountedDevice = null;
+        var access = new MacRawDeviceAccess((deviceId, _) =>
+        {
+            unmountedDevice = deviceId;
+            return Task.CompletedTask;
+        });
+
+        await access.PrepareAsync(SelectedDisk(size: 64_000), writing: true, CancellationToken.None);
+
+        Assert.Equal("disk4", unmountedDevice);
+    }
+
+    [Fact]
+    public async Task RawDeviceRestoreReliesOnDiskArbitrationRescan()
+    {
+        var unmountCalls = 0;
+        var access = new MacRawDeviceAccess((_, _) =>
+        {
+            unmountCalls++;
+            return Task.CompletedTask;
+        });
+
+        await access.RestoreAsync(SelectedDisk(size: 64_000), CancellationToken.None);
+
+        Assert.Equal(0, unmountCalls);
+    }
+
     private static MacDeviceCatalog CatalogWithDiskSize(long size) => new((_, arguments, _) =>
     {
         var values = arguments.ToArray();

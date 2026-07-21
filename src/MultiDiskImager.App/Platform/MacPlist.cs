@@ -43,6 +43,11 @@ internal sealed class MacPlist
             ? array.Elements("string").Select(element => element.Value).ToArray()
             : [];
 
+    public IReadOnlyList<string> DescendantStrings(string key) => _values.Values
+        .SelectMany(value => DescendantStrings(value, key))
+        .Distinct(StringComparer.Ordinal)
+        .ToArray();
+
     public IReadOnlyList<MacPlist> DictionaryArray(string key)
     {
         if (!_values.TryGetValue(key, out var array) || array.Name.LocalName != "array")
@@ -55,5 +60,38 @@ internal sealed class MacPlist
             var document = new XDocument(new XElement("plist", new XElement(dictionary)));
             return Parse(document.ToString(SaveOptions.DisableFormatting));
         }).ToArray();
+    }
+
+    private static IEnumerable<string> DescendantStrings(XElement element, string key)
+    {
+        if (element.Name.LocalName == "dict")
+        {
+            var children = element.Elements().ToArray();
+            for (var index = 0; index + 1 < children.Length; index += 2)
+            {
+                if (children[index].Name.LocalName == "key" &&
+                    children[index].Value.Equals(key, StringComparison.Ordinal) &&
+                    children[index + 1].Name.LocalName == "string" &&
+                    !string.IsNullOrWhiteSpace(children[index + 1].Value))
+                {
+                    yield return children[index + 1].Value;
+                }
+
+                foreach (var value in DescendantStrings(children[index + 1], key))
+                {
+                    yield return value;
+                }
+            }
+
+            yield break;
+        }
+
+        foreach (var child in element.Elements())
+        {
+            foreach (var value in DescendantStrings(child, key))
+            {
+                yield return value;
+            }
+        }
     }
 }

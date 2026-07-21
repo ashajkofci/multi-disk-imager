@@ -21,5 +21,8 @@
     <Compile Include="..\..\src\MultiDiskImager.App\Infrastructure\ProcessRunner.cs" Link="AppSource\ProcessRunner.cs" />
     <Compile Include="..\..\src\MultiDiskImager.App\Platform\MacDeviceCatalog.cs" Link="AppSource\MacDeviceCatalog.cs" />
     <Compile Include="..\..\src\MultiDiskImager.App\Platform\MacPlist.cs" Link="AppSource\MacPlist.cs" />
+    <Compile Include="..\..\src\MultiDiskImager.App\Platform\IRawDeviceAccess.cs" Link="AppSource\IRawDeviceAccess.cs" />
+    <Compile Include="..\..\src\MultiDiskImager.App\Platform\MacDiskArbitration.cs" Link="AppSource\MacDiskArbitration.cs" />
+    <Compile Include="..\..\src\MultiDiskImager.App\Platform\MacRawDeviceAccess.cs" Link="AppSource\MacRawDeviceAccess.cs" />
   </ItemGroup>
 </Project>

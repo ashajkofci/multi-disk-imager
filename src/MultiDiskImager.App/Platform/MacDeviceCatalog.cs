@@ -51,11 +51,7 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
                 continue;
             }
 
-            var mountPoints = disk.DictionaryArray("Partitions")
-                .Select(partition => partition.String("MountPoint"))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Cast<string>()
-                .ToArray();
+            var mountPoints = disk.DescendantStrings("MountPoint");
 
             devices.Add(CreateDescriptor(info, id, disk.Integer("Size"), systemIds.Contains(id), mountPoints));
         }
@@ -124,11 +120,7 @@ internal sealed class MacDeviceCatalog : IBlockDeviceCatalog
                 throw new IOException($"Device {requested.Id} changed after selection. Refresh and select it again.");
             }
 
-            var mountPoints = disk.DictionaryArray("Partitions")
-                .Select(partition => partition.String("MountPoint"))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Cast<string>()
-                .ToArray();
+            var mountPoints = disk.DescendantStrings("MountPoint");
             validated.Add(requested with { IsSystem = false, MountPoints = mountPoints });
         }
 
