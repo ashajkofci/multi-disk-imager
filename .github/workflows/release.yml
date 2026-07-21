@@ -138,7 +138,7 @@ jobs:
               Remove-Item -Recurse -Force $packageRoot
             }
           }
-      - name: Package macOS app
+      - name: Package macOS DMG
         if: matrix.platform == 'macos'
         shell: bash
         run: bash scripts/package-macos.sh publish '${{ needs.validate.outputs.version }}' '${{ matrix.arch }}' artifacts
