@@ -32,9 +32,11 @@ jobs:
           --configuration Release --runtime linux-x64 --self-contained true --no-restore
           -p:Version=0.0.0 -p:InformationalVersion=0.0.0-ci
           -p:PublishDir=${{ github.workspace }}/ci-publish/
-      - name: Smoke-test and package Linux build
+      - name: Smoke-test and package Linux DEB
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           DOTNET_BUNDLE_EXTRACT_BASE_DIR="$RUNNER_TEMP/multi-disk-imager" ./ci-publish/MultiDiskImager --version
           bash scripts/package-linux.sh ci-publish 0.0.0 x64 ci-artifacts
+          dpkg-deb --info ci-artifacts/bnovate-multi-disk-imager-0.0.0-linux-x64.deb
+          dpkg-deb --contents ci-artifacts/bnovate-multi-disk-imager-0.0.0-linux-x64.deb

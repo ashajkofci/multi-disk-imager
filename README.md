@@ -1,44 +1,64 @@
-# bNovate Multi Disk Imager
+<p align="center">
+  <img src="src/MultiDiskImager.App/Assets/AppIcon.png" width="96" alt="bNovate Multi Disk Imager icon">
+</p>
 
-bNovate Multi Disk Imager is a cross-platform desktop utility from [bNovate Technologies SA](https://www.bnovate.com) for reading, writing, and verifying raw disk images. It can write one image to several devices concurrently and preserves a plain, byte-for-byte `.img` format.
+<h1 align="center">bNovate Multi Disk Imager</h1>
 
-For a product-oriented overview, see [README-COMMERCIAL.md](README-COMMERCIAL.md).
+<p align="center">
+  Read, write, and verify raw disk images on Windows, macOS, and Linux.
+</p>
 
-Unlike the original dotNet Disk Imager, this application deliberately has no ZIP compression or encryption mode. It never adds a header, container, or proprietary metadata to an image.
+<p align="center">
+  <a href="https://github.com/ashajkofci/multi-disk-imager/releases/latest">Download the latest release</a>
+  · <a href="README-COMMERCIAL.md">Product overview</a>
+  · <a href="https://www.bnovate.com">bNovate Technologies</a>
+</p>
 
-## Features
+![bNovate Multi Disk Imager application](docs/app-screenshot.png)
 
-- Read a physical device to a raw `.img` file.
-- Write one image to multiple devices in parallel; a failure on one target does not stop healthy targets.
-- Verify an image against one or more devices and report the first mismatching byte.
-- Optionally verify automatically after a read or write.
+## Highlights
+
+- Write one image to multiple devices in parallel.
+- Read a physical device to a standard, byte-for-byte `.img` file.
+- Verify devices and report the first mismatching byte.
+- Calculate MD5, SHA-1, and SHA-256 checksums.
 - Read only through the last allocated MBR or GPT partition.
-- Detect an oversized image, inspect the discarded tail for non-zero data, and require explicit approval before cropping.
-- Quick-wipe partition/filesystem metadata at the beginning and end of a device.
-- MD5, SHA-1, and SHA-256 image checksums.
-- Transfer speed graph, progress, throughput, and remaining-time estimates.
-- Device identity revalidation immediately before elevated access.
-- GitHub Releases update checks.
+- Track per-device progress, speed, throughput, and remaining time.
+- Quick-wipe partition and filesystem metadata.
 
-The system disk is never offered as a target. Writes and wipes require administrator approval and show the selected model, size, and device identifier before destructive access.
+Images stay portable: the app adds no compression, encryption, headers, or proprietary metadata.
 
-## Downloads
+## Safety
 
-SemVer releases publish self-contained builds for:
+The system disk is never offered as a target. Before writing or wiping, the app revalidates each device and shows its model, capacity, and platform identifier for confirmation.
 
-- Windows 10+ x64: an unsigned Setup `.exe`, portable `.exe`, and `.msix` package.
-- macOS 12+ Intel: a `.dmg` containing the app.
-- macOS 12+ Apple Silicon: a `.dmg` containing the app.
-- Ubuntu 22.04+ x64: a self-contained executable in a `.tar.gz` archive.
-- Ubuntu 22.04+ ARM64: a self-contained executable in a `.tar.gz` archive.
+> [!WARNING]
+> Writing or wiping a disk destroys data. Always confirm every selected device and keep backups.
 
-The release artifacts do not use commercial signing identities. Windows SmartScreen or macOS Gatekeeper may therefore warn on first launch. The macOS app has an ad-hoc signature so both Intel and Apple Silicon bundles are structurally valid. Open the DMG, drag the app to Applications, then Control-click it in Finder and choose **Open**. If macOS still blocks it, open **System Settings → Privacy & Security** and choose **Open Anyway** for the app. Administrator approval is requested only when raw-device access begins.
+## Download and install
 
-On Windows, the Setup `.exe` is the easiest option: it installs the app under Program Files and creates Start Menu and uninstall entries, with an optional desktop shortcut. The portable `.exe` runs without installation. The pipeline also produces an unsigned `.msix` for enterprise or downstream distribution workflows; Windows requires that package to be signed before normal App Installer installation. All variants contain the .NET runtime and native dependencies.
+Download the package for your system from [GitHub Releases](https://github.com/ashajkofci/multi-disk-imager/releases/latest).
 
-On Ubuntu, extract the archive and run `./MultiDiskImager`. The executable contains the .NET runtime and application dependencies. Raw-device operations use the desktop's PolicyKit prompt through `pkexec`; the `policykit-1` and standard `util-linux` tools must be installed.
+| Platform | Package |
+| --- | --- |
+| Windows 10+ x64 | Setup `.exe` (recommended), portable `.exe`, or unsigned `.msix` |
+| macOS 12+ Intel | `.dmg` |
+| macOS 12+ Apple Silicon | `.dmg` |
+| Ubuntu 22.04+ x64 | `.deb` (`amd64`) |
+| Ubuntu 22.04+ ARM64 | `.deb` (`arm64`) |
 
-## Command line
+Install a downloaded Linux package with:
+
+```bash
+sudo apt install ./bnovate-multi-disk-imager-*-linux-x64.deb
+```
+
+Use `linux-arm64` in the filename on ARM64. The package installs the app-menu entry, command-line launcher, icon, and required system dependencies. Administrator approval is requested only when raw-device access begins.
+
+Windows and macOS releases are not commercially signed, so SmartScreen or Gatekeeper may warn on first launch. On macOS, open the DMG, drag the app to **Applications**, then Control-click the app and choose **Open**.
+
+<details>
+<summary><strong>Command-line options</strong></summary>
 
 ```text
 MultiDiskImager [image.img] [options]
@@ -55,11 +75,12 @@ MultiDiskImager [image.img] [options]
   -h, --help                    Show help
 ```
 
-Legacy compression (`-z`) and encryption (`-e`) arguments fail with a clear error instead of silently changing the image format.
+</details>
 
-## Build and test
+<details>
+<summary><strong>Build from source</strong></summary>
 
-The app targets .NET 8 for its runtime baseline. Avalonia 12's source generators require the .NET 10 SDK to build it.
+The app targets .NET 8. Avalonia 12's source generators require the .NET 10 SDK to build it.
 
 ```bash
 dotnet restore MultiDiskImager.sln --locked-mode -m:1
@@ -67,24 +88,14 @@ dotnet build MultiDiskImager.sln -c Release --no-restore -m:1
 dotnet test MultiDiskImager.sln -c Release --no-build
 ```
 
-Create a release by pushing an annotated or lightweight SemVer tag such as `v1.2.3`. GitHub Actions validates the tag, builds every platform artifact, creates `SHA256SUMS.txt` and `release-manifest.json`, and attaches them to the GitHub Release.
+Linux `.deb` packages are built with `scripts/package-linux.sh`. Release artifacts and their hashes are generated automatically from SemVer tags such as `v1.2.3`.
 
-### Windows packaging
+</details>
 
-The Windows job uses Inno Setup to create the Setup executable and the SDK's MakeAppx tool to create an unsigned MSIX. No signing certificate or GitHub secret is required.
+## Languages
 
-The manifest uses the Partner Center identity `bNovateTechnologiesSA.bNovateMultiDiskImager` and publisher `CN=AFC41234-54C7-478C-B9B2-37E1553475F1`. Windows derives the package family name `bNovateTechnologiesSA.bNovateMultiDiskImager_wn2prwzkpdthy` from those values. The package declares `runFullTrust` and `allowElevation` because raw-device operations use an administrator helper; Microsoft Store submission of `allowElevation` requires approval.
-
-### Languages
-
-The application automatically follows the operating-system UI language. Settings also provides a language menu to force English, French, German, Italian, Spanish, Portuguese, Dutch, Polish, Simplified Chinese, or Japanese; the selection applies on the next launch. English is the fallback for other locales.
-
-## Safety
-
-Raw disk imaging can destroy data. Confirm the model, capacity, and platform device ID every time. Keep backups and disconnect devices that are not part of the operation. Canceling or losing power during a write can leave the target unusable until it is rewritten.
+The app follows the operating-system language and includes English, French, German, Italian, Spanish, Portuguese, Dutch, Polish, Simplified Chinese, and Japanese.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-Copyright © 2026 bNovate Technologies SA. Author: Adrian Shajkofci.
+[MIT](LICENSE) © 2026 bNovate Technologies SA. Author: Adrian Shajkofci.

@@ -142,7 +142,7 @@ jobs:
         if: matrix.platform == 'macos'
         shell: bash
         run: bash scripts/package-macos.sh publish '${{ needs.validate.outputs.version }}' '${{ matrix.arch }}' artifacts
-      - name: Package Linux executable
+      - name: Package Linux DEB
         if: matrix.platform == 'linux'
         shell: bash
         run: bash scripts/package-linux.sh publish '${{ needs.validate.outputs.version }}' '${{ matrix.arch }}' artifacts
